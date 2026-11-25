@@ -28,6 +28,9 @@ type Deps struct {
 	Stderr io.Writer
 	// QualityOptions change how the upload connects to Coalesce Quality.
 	QualityOptions []quality.Option
+	// Environ is the environment that the command reads the data sources of Cube from, in the
+	// form of os.Environ. Nil means the environment of the process.
+	Environ []string
 }
 
 // NewRootCommand builds the command tree.

@@ -51,8 +51,13 @@ func TestNewRequestMapsEachField(t *testing.T) {
 		CollectedAt:          collectedAt,
 		CubeVersion:          "1.8.30",
 		SecurityContextLabel: "full-read",
+		DataSources: []cube.DataSource{
+			{Name: "default", Type: "snowflake", Database: "ANALYTICS", Host: "ab12345.eu-west-1", Project: "example-project"},
+			{Name: "postgres", Type: "postgres"},
+		},
 	}
 	requireEachFieldSet(t, snapshot)
+	requireEachFieldSet(t, snapshot.DataSources[0])
 	// The two members together give each field of MemberSQL a value.
 	requireEachFieldSet(t, cube.MemberSQL{
 		Member: withSQL.Member, DataSource: withSQL.DataSource, SQL: withSQL.SQL, Error: withError.Error, Ungrouped: withSQL.Ungrouped,
@@ -84,6 +89,21 @@ func TestNewRequestMapsEachField(t *testing.T) {
 	require.Nil(t, second.Sql)
 	require.Nil(t, second.DataSource)
 	require.False(t, second.GetUngrouped())
+
+	require.Len(t, request.GetDataSources(), 2)
+	source := request.GetDataSources()[0]
+	requireEachFieldPopulated(t, source.ProtoReflect())
+	require.Equal(t, "default", source.GetName())
+	require.Equal(t, "snowflake", source.GetType())
+	require.Equal(t, "ANALYTICS", source.GetDatabase())
+	require.Equal(t, "ab12345.eu-west-1", source.GetHost())
+	require.Equal(t, "example-project", source.GetProject())
+	// An empty field of a data source is an absent field of the message.
+	bare := request.GetDataSources()[1]
+	require.Equal(t, "postgres", bare.GetName())
+	require.Nil(t, bare.Database)
+	require.Nil(t, bare.Host)
+	require.Nil(t, bare.Project)
 }
 
 func TestNewRequestKeepsAbsentFieldsAbsent(t *testing.T) {
@@ -114,8 +134,13 @@ func TestNewSnapshotIsTheReverseOfNewRequest(t *testing.T) {
 				{Member: "orders.empty"},
 				{Member: "orders.broken", Error: "no join path"},
 			},
-			ModelExport:          []byte(`{"data":[]}`),
-			CollectedAt:          time.Date(2026, 3, 4, 5, 6, 7, 8, time.UTC),
+			ModelExport: []byte(`{"data":[]}`),
+			CollectedAt: time.Date(2026, 3, 4, 5, 6, 7, 8, time.UTC),
+			DataSources: []cube.DataSource{
+				{Name: "default", Type: "snowflake", Database: "ANALYTICS", Host: "ab12345.eu-west-1"},
+				{Name: "bigquery", Type: "bigquery", Project: "example-project"},
+				{Name: "bare"},
+			},
 			CubeVersion:          "1.8.30",
 			SecurityContextLabel: "full-read",
 		},

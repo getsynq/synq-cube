@@ -76,8 +76,11 @@ type UploadSuite struct {
 	tokenStatus    int
 	options        []quality.Option
 	stdin          io.Reader
-	stdout         bytes.Buffer
-	stderr         bytes.Buffer
+	// environ is the environment of Cube that the command reads the data sources from. It is
+	// never the environment of the machine that runs the test.
+	environ []string
+	stdout  bytes.Buffer
+	stderr  bytes.Buffer
 }
 
 func TestUploadSuite(t *testing.T) {
@@ -87,6 +90,7 @@ func TestUploadSuite(t *testing.T) {
 func (s *UploadSuite) SetupTest() {
 	t := s.T()
 	s.stdin = nil
+	s.environ = []string{}
 	s.stdout.Reset()
 	s.stderr.Reset()
 	s.tokenExchanges = nil
@@ -97,6 +101,7 @@ func (s *UploadSuite) SetupTest() {
 		"CUBE_API_URL", "CUBE_API_SECRET", "CUBE_API_TOKEN", "CUBE_SECURITY_CONTEXT", "CUBE_SECURITY_CONTEXT_LABEL", "CUBE_VERSION",
 		"CUBE_CLOUD_URL", "CUBE_CLOUD_API_KEY", "CUBE_CLOUD_DEPLOYMENT_ID", "CUBE_CLOUD_ENVIRONMENT_ID",
 		"CUBE_INCLUDE", "CUBE_EXCLUDE", "CUBE_SKIP_HIDDEN", "CUBE_SKIP_MEMBER_SQL", "CUBE_SKIP_MODEL_EXPORT",
+		"CUBE_DATA_SOURCES", "CUBE_NO_DATA_SOURCES_FROM_ENV",
 		"QUALITY_TOKEN", "QUALITY_API_ENDPOINT", "QUALITY_REGION", "SYNQ_TOKEN", "SYNQ_API_ENDPOINT", "SYNQ_REGION",
 	} {
 		t.Setenv(name, "")
@@ -142,7 +147,7 @@ func (s *UploadSuite) SetupTest() {
 }
 
 func (s *UploadSuite) run(args ...string) error {
-	root := cmd.NewRootCommand(cmd.Deps{Stdin: s.stdin, Stdout: &s.stdout, Stderr: &s.stderr, QualityOptions: s.options})
+	root := cmd.NewRootCommand(cmd.Deps{Stdin: s.stdin, Environ: s.environ, Stdout: &s.stdout, Stderr: &s.stderr, QualityOptions: s.options})
 	root.SetArgs(args)
 	return root.ExecuteContext(s.T().Context())
 }

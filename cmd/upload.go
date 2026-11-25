@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -39,16 +40,20 @@ const (
 	envCubeSkipHidden           = "CUBE_SKIP_HIDDEN"
 	envCubeSkipMemberSQL        = "CUBE_SKIP_MEMBER_SQL"
 	envCubeSkipModelExport      = "CUBE_SKIP_MODEL_EXPORT"
+	envCubeDataSources          = "CUBE_DATA_SOURCES"
+	envCubeNoDataSourcesFromEnv = "CUBE_NO_DATA_SOURCES_FROM_ENV"
 )
 
 // Names of the flags that the command reads back.
 const (
-	flagInput           = "input"
-	flagInclude         = "include"
-	flagExclude         = "exclude"
-	flagSkipHidden      = "skip-hidden"
-	flagSkipMemberSQL   = "skip-member-sql"
-	flagSkipModelExport = "skip-model-export"
+	flagInput                = "input"
+	flagInclude              = "include"
+	flagExclude              = "exclude"
+	flagSkipHidden           = "skip-hidden"
+	flagSkipMemberSQL        = "skip-member-sql"
+	flagSkipModelExport      = "skip-model-export"
+	flagDataSource           = "data-source"
+	flagNoDataSourcesFromEnv = "no-data-sources-from-env"
 )
 
 // The flags that set how the command reads Cube. With --input the command does not read Cube,
@@ -56,7 +61,7 @@ const (
 var collectionFlags = []string{
 	"cube-api-url", "cube-security-context", "security-context-label", "cube-version",
 	"cube-cloud-url", "cube-cloud-deployment-id", "cube-cloud-environment-id",
-	"concurrency", "request-timeout",
+	"concurrency", "request-timeout", flagDataSource, flagNoDataSourcesFromEnv,
 }
 
 // stdinName is the value of --input that reads the standard input.
@@ -80,6 +85,8 @@ type uploadFlags struct {
 	skipHidden             bool
 	skipMemberSQL          bool
 	skipModelExport        bool
+	dataSources            []string
+	noDataSourcesFromEnv   bool
 	input                  string
 	dryRun                 bool
 	output                 string
@@ -181,6 +188,13 @@ Filters:
 			envCubeSkipMemberSQL+")")
 	f.BoolVar(&flags.skipModelExport, flagSkipModelExport, false,
 		"Leave out the Cube Cloud model export and send no request for it (or $"+envCubeSkipModelExport+")")
+	f.StringArrayVar(&flags.dataSources, flagDataSource, nil,
+		"What a data source of Cube is, as name=type[,database=..][,host=..][,project=..], for example "+
+			"'default=snowflake,database=ANALYTICS,host=ab12345.eu-west-1'. For Snowflake the host is the account. "+
+			"It wins over Cube Cloud and over the CUBEJS_DB_* variables. Can be set more than once (or $"+
+			envCubeDataSources+", separated by semicolons)")
+	f.BoolVar(&flags.noDataSourcesFromEnv, flagNoDataSourcesFromEnv, false,
+		"Do not read the data sources from the CUBEJS_DB_* and CUBEJS_DS_* variables of Cube (or $"+envCubeNoDataSourcesFromEnv+")")
 	f.StringVar(&flags.input, flagInput, "",
 		"Send the snapshot of this file and send no request to Cube. Use - for the standard input")
 	f.BoolVar(&flags.dryRun, "dry-run", false, "Send nothing to Coalesce Quality. Without --input, use it with --output")
@@ -209,6 +223,13 @@ func runUpload(ctx context.Context, deps Deps, deployment *region.Flags, flags *
 	filter, err := newFilter(flags, changed)
 	if err != nil {
 		return err
+	}
+	var settingDataSources, environmentDataSources []cube.DataSource
+	if !fromFile {
+		settingDataSources, environmentDataSources, err = newDataSources(deps, flags, changed)
+		if err != nil {
+			return err
+		}
 	}
 
 	// The two sources of a snapshot. Each fails here for a wrong setting, before the connection
@@ -250,16 +271,20 @@ func runUpload(ctx context.Context, deps Deps, deployment *region.Flags, flags *
 	} else {
 		fmt.Fprintf(deps.Stdout, "Reading the data model from %s\n", client.APIURL())
 		snapshot, report, err = cube.Collect(ctx, client, cube.Options{
-			Concurrency:          flags.concurrency,
-			SecurityContextLabel: valueOrEnv(flags.securityContextLabel, envCubeSecurityContextLabel),
-			CubeVersion:          valueOrEnv(flags.cubeVersion, envCubeVersion),
-			Filter:               filter,
+			Concurrency:            flags.concurrency,
+			SecurityContextLabel:   valueOrEnv(flags.securityContextLabel, envCubeSecurityContextLabel),
+			CubeVersion:            valueOrEnv(flags.cubeVersion, envCubeVersion),
+			Filter:                 filter,
+			DataSources:            settingDataSources,
+			EnvironmentDataSources: environmentDataSources,
 		})
 		if err != nil {
 			return fmt.Errorf("cannot read the data model: %w", err)
 		}
 	}
 	printReport(deps, report, filter)
+	printDataSources(deps, snapshot, report, fromFile)
+	printWarnings(deps.Stderr, report.Warnings)
 
 	// The collector returns a plain struct. The message of the upload is built here, with the
 	// build stamps of this binary. A snapshot from a file gets them too.
@@ -471,7 +496,96 @@ func printReport(deps Deps, report *cube.Report, filter cube.Filter) {
 	case report.ModelExportSkipped:
 		fmt.Fprintln(deps.Stdout, "Left out: the Cube Cloud model export. It cannot be filtered, and a filter removed a part of the data model")
 	}
-	printWarnings(deps.Stderr, report.Warnings)
+}
+
+// newDataSources reads what the data sources of Cube are: from the --data-source setting, and
+// from the variables of Cube in the environment. The variables that it reads hold no credential.
+func newDataSources(deps Deps, flags *uploadFlags, changed func(string) bool) ([]cube.DataSource, []cube.DataSource, error) {
+	texts := flags.dataSources
+	if !changed(flagDataSource) {
+		texts = nil
+		for _, text := range strings.Split(os.Getenv(envCubeDataSources), ";") {
+			if text = strings.TrimSpace(text); text != "" {
+				texts = append(texts, text)
+			}
+		}
+	}
+	var setting []cube.DataSource
+	seen := map[string]bool{}
+	for _, text := range texts {
+		source, err := cube.ParseDataSource(text)
+		if err != nil {
+			return nil, nil, err
+		}
+		if seen[source.Name] {
+			return nil, nil, fmt.Errorf("the data source %q is set two times", source.Name)
+		}
+		seen[source.Name] = true
+		setting = append(setting, source)
+	}
+
+	skip := flags.noDataSourcesFromEnv
+	if text := os.Getenv(envCubeNoDataSourcesFromEnv); !changed(flagNoDataSourcesFromEnv) && text != "" {
+		value, err := strconv.ParseBool(text)
+		if err != nil {
+			return nil, nil, fmt.Errorf("%s is %q: set it to true or false", envCubeNoDataSourcesFromEnv, text)
+		}
+		skip = value
+	}
+	if skip {
+		return setting, nil, nil
+	}
+	environ := deps.Environ
+	if environ == nil {
+		environ = os.Environ()
+	}
+	return setting, cube.DataSourcesFromEnv(environ), nil
+}
+
+// printDataSources prints one line for each data source of the snapshot, and one line with the
+// data sources that the members use and that the snapshot does not describe.
+func printDataSources(deps Deps, snapshot *cube.Snapshot, report *cube.Report, fromFile bool) {
+	described := map[string]bool{}
+	for _, source := range snapshot.DataSources {
+		described[source.Name] = true
+		details := []string{valueOr(source.Type, "type not known")}
+		if source.Database != "" {
+			details = append(details, "database "+source.Database)
+		}
+		if source.Host != "" {
+			details = append(details, "host "+source.Host)
+		}
+		if source.Project != "" {
+			details = append(details, "project "+source.Project)
+		}
+		origin := string(report.DataSourceOrigins[source.Name])
+		switch {
+		case fromFile:
+			origin = "the snapshot file"
+		case origin == string(cube.OriginSetting):
+			origin = "--" + flagDataSource
+		}
+		fmt.Fprintf(deps.Stdout, "Data source %s: %s (from %s)\n", source.Name, strings.Join(details, ", "), origin)
+	}
+	var missing []string
+	seen := map[string]bool{}
+	for _, member := range snapshot.MemberSQL {
+		if name := member.DataSource; name != "" && !described[name] && !seen[name] {
+			seen[name] = true
+			missing = append(missing, name)
+		}
+	}
+	if len(missing) > 0 {
+		sort.Strings(missing)
+		fmt.Fprintf(deps.Stdout, "Data sources that the snapshot does not describe: %s\n", strings.Join(missing, ", "))
+	}
+}
+
+func valueOr(value string, fallback string) string {
+	if value != "" {
+		return value
+	}
+	return fallback
 }
 
 func printWarnings(w io.Writer, warnings []string) {

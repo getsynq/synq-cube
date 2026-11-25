@@ -31,6 +31,19 @@ func NewRequest(snapshot *cube.Snapshot, uploaderVersion string, uploaderBuildTi
 	if !snapshot.CollectedAt.IsZero() {
 		request.CollectedAt = timestamppb.New(snapshot.CollectedAt)
 	}
+	for _, source := range snapshot.DataSources {
+		message := &ingestcubev1.DataSource{Name: source.Name, Type: source.Type}
+		if source.Database != "" {
+			message.Database = &source.Database
+		}
+		if source.Host != "" {
+			message.Host = &source.Host
+		}
+		if source.Project != "" {
+			message.Project = &source.Project
+		}
+		request.DataSources = append(request.DataSources, message)
+	}
 	if snapshot.CubeVersion != "" {
 		request.CubeVersion = &snapshot.CubeVersion
 	}
@@ -81,6 +94,15 @@ func NewSnapshot(request *ingestcubev1.IngestSnapshotRequest) *cube.Snapshot {
 			member.DataSource = message.GetDataSource()
 		}
 		snapshot.MemberSQL = append(snapshot.MemberSQL, member)
+	}
+	for _, message := range request.GetDataSources() {
+		snapshot.DataSources = append(snapshot.DataSources, cube.DataSource{
+			Name:     message.GetName(),
+			Type:     message.GetType(),
+			Database: message.GetDatabase(),
+			Host:     message.GetHost(),
+			Project:  message.GetProject(),
+		})
 	}
 	return snapshot
 }
