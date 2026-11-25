@@ -32,7 +32,7 @@ go vet ./...
 The package `github.com/getsynq/synq-cube/cube` has two callers: this tool and the Coalesce Quality backend. The two callers send the same snapshot.
 
 - Put each change of what a snapshot holds in `cube/`, never in `cmd/`.
-- Keep the exported API of `cube/` stable: `Client`, `NewClient`, `NewStaticTokenSource`, `NewAPISecretTokenSource`, `NewCloudTokenSource`, `Collect`, `Describe`, `Options`, `Report`, `Snapshot`, `MemberSQL`, `Filter`, `Filter.Apply`, `FilterReport`, `LeftOut`, `ErrNothingLeft`, `cubemeta` and `cubetest.NewServer`. If you must change a signature, say so in the pull request.
+- Keep the exported API of `cube/` stable: `Client`, `NewClient`, `NewStaticTokenSource`, `NewAPISecretTokenSource`, `NewCloudTokenSource`, `Collect`, `Describe`, `Options`, `Report`, `Snapshot`, `MemberSQL`, `DataSource`, `DataSourcesFromEnv`, `ParseDataSource`, `Filter`, `Filter.Apply`, `FilterReport`, `LeftOut`, `ErrNothingLeft`, `cubemeta` and `cubetest.NewServer`. If you must change a signature, say so in the pull request.
 - Do not import `github.com/spf13/cobra` or a package under `internal/` from `cube/`.
 - Do not read environment variables in `cube/`. The caller gives each setting as a parameter.
 - Keep the dependencies of `cube/` small: the standard library, `github.com/golang-jwt/jwt/v5`, `golang.org/x/sync` and, in tests, `github.com/stretchr/testify`.
@@ -58,6 +58,16 @@ The package `github.com/getsynq/synq-cube/cube` has two callers: this tool and t
 - A snapshot is the whole data model for Coalesce Quality: a cube or a view that is not in the snapshot is removed there. Say this in the help text of each setting that removes a cube or a view.
 - Give each new setting a flag and a `CUBE_*` variable in `cmd/upload.go`, a row in the README and a line in the run summary (`printReport`).
 
+### The data sources
+
+`Snapshot.DataSources` says what each data source of Cube is, so that Coalesce Quality can find its warehouse. The order of precedence for one name is: `Options.DataSources` (the `--data-source` setting), Cube Cloud (`GET /v1/data-sources`), `Options.EnvironmentDataSources` (the variables of Cube).
+
+- `cube.DataSourcesFromEnv` reads only the variables in `envSuffixes` in `cube/datasource.go`. None of them is a credential. Do not add a variable that holds a user, a password, a key, a token, a secret or a credentials file. `TestFromEnvReadsNoCredential` feeds such variables and asserts that no value is in the result.
+- `cube.DataSource` has no field for a credential. Do not add one.
+- `Collect` reads no environment variable. The CLI calls `DataSourcesFromEnv(os.Environ())` and gives the result in the options.
+- `Collect` keeps `default` and the data sources that the members use. `Filter.Apply` keeps the list as it is.
+- A failed read of Cube Cloud is a warning, never an error.
+
 ### The snapshot file
 
 `--output` writes the protojson form of `IngestSnapshotRequest`, and `--input` reads it. This is the one file format of the tool.
@@ -69,6 +79,7 @@ The package `github.com/getsynq/synq-cube/cube` has two callers: this tool and t
 
 ## What the tool must never do
 
+- Do not read a credential of a data source of Cube (`CUBEJS_DB_USER`, `CUBEJS_DB_PASS` and the others). See § The data sources.
 - Do not call `/v1/load`. The promise to the customer is that no data rows leave the network. `TestSnapshotOfTheRecording` in `cube/` asserts the list of request paths.
 - Do not send or print the security context, `CUBE_API_SECRET`, `CUBE_API_TOKEN`, `CUBE_CLOUD_API_KEY` or `QUALITY_TOKEN`. A secret has an environment variable and no flag.
 - Do not add a `--deployment` flag. The integration behind `QUALITY_TOKEN` names the deployment.

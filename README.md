@@ -17,7 +17,9 @@ The tool is open source (Apache 2.0), so you can check what it reads and what it
 | `GET /v1/meta?extended` | The compiled data model: the cubes and the views with their measures, dimensions, segments, joins, hierarchies, folders and pre-aggregations |
 | `GET /v1/sql` | The SQL that Cube generates for one measure or one dimension. The tool sends one request for each measure and each dimension. |
 
-With Cube Cloud credentials, the tool also sends `POST /v1/model-export` to the Cube Cloud Metadata API. If that request fails, the tool prints a warning and sends the snapshot without it.
+With Cube Cloud credentials, the tool also sends `POST /v1/model-export` and `GET /v1/data-sources` to the Cube Cloud Metadata API. If one of these requests fails, the tool prints a warning and sends the snapshot without its response.
+
+The tool also reads five kinds of variable from its own environment that say what a data source of Cube is, for example `CUBEJS_DB_TYPE`. See [How Coalesce Quality finds the warehouse of a data source](#how-coalesce-quality-finds-the-warehouse-of-a-data-source).
 
 - Cube compiles the SQL for `/v1/sql` and does not run it. No query reaches the warehouse.
 - The tool never requests `/v1/load`. No data rows leave your network.
@@ -162,6 +164,15 @@ Each setting is an environment variable. The settings that are not secrets have 
 
 Set one credential. If more than one is set, the tool uses the first of them in this order: `CUBE_CLOUD_API_KEY`, `CUBE_API_TOKEN`, `CUBE_API_SECRET`.
 
+### Data sources
+
+See [How Coalesce Quality finds the warehouse of a data source](#how-coalesce-quality-finds-the-warehouse-of-a-data-source).
+
+| Variable | Flag | Meaning |
+|---|---|---|
+| `CUBE_DATA_SOURCES` | `--data-source <text>` | What a data source is, as `name=type[,database=..][,host=..][,project=..]`. Set the flag more than once, or separate the entries in the variable with semicolons. |
+| `CUBE_NO_DATA_SOURCES_FROM_ENV` | `--no-data-sources-from-env` | Do not read the `CUBEJS_DB_*` and `CUBEJS_DS_*` variables of Cube. The variable takes `true` or `false`. |
+
 ### Filters
 
 See [Leave parts of the data model out](#leave-parts-of-the-data-model-out) before you use them.
@@ -191,6 +202,58 @@ The three `CUBE_SKIP_*` variables take `true` or `false`.
 | `--output <file>` | Write the snapshot to the file as JSON |
 | `--input <file>` | Send the snapshot of the file and send no request to Cube. `-` is the standard input. |
 | `--dry-run` | Send nothing to Coalesce Quality. Use it with `--output`, or with `--input` to check a file. |
+
+## How Coalesce Quality finds the warehouse of a data source
+
+Each cube reads one data source of Cube, for example `default`. For the lineage to the warehouse tables, Coalesce Quality must know which of your warehouse integrations a data source is. The snapshot says what each data source is: the name, the database type, and the database, the host or the project. Coalesce Quality compares that with your warehouse integrations.
+
+The tool takes the description of a data source from three places. If two places describe the same data source, the first in this list wins.
+
+1. **`--data-source`.** Use it if the other two places are not available.
+
+   ```bash
+   synq-cube upload \
+     --data-source 'default=snowflake,database=ANALYTICS,host=ab12345.eu-west-1' \
+     --data-source 'events=bigquery,project=example-project'
+   ```
+
+   The type is the database type as Cube spells it in `CUBEJS_DB_TYPE` (`snowflake`, `bigquery`, `postgres`, `redshift`, `clickhouse`). For Snowflake, `host` is the account.
+
+2. **Cube Cloud.** With Cube Cloud credentials this is automatic: the tool reads the data sources from Cube Cloud. Cube Cloud lists only the data sources that connect.
+
+3. **The environment of Cube**, for Cube Core. Run the tool with the same env file as Cube:
+
+   ```bash
+   docker run --rm --env-file cube.env \
+     -e CUBE_API_URL -e QUALITY_TOKEN -e QUALITY_REGION \
+     ghcr.io/getsynq/synq-cube:latest
+   ```
+
+   The tool reads these variables, and no other variable of Cube:
+
+   | Variable | Goes to |
+   |---|---|
+   | `CUBEJS_DB_TYPE` | the type |
+   | `CUBEJS_DB_NAME` | the database |
+   | `CUBEJS_DB_HOST` | the host |
+   | `CUBEJS_DB_SNOWFLAKE_ACCOUNT` | the host of a Snowflake data source |
+   | `CUBEJS_DB_BQ_PROJECT_ID` | the project |
+
+   These are the data source `default`. With the prefix `CUBEJS_DS_<NAME>_`, for example `CUBEJS_DS_EVENTS_DB_TYPE`, they are the data source `<name>`. The name has the spelling of `CUBEJS_DATASOURCES`, or lower case if it is not in that list.
+
+- The tool reads no credential. It never reads a user, a password, a key, a token or a credentials file of a data source, and the snapshot has no field for one. A test in this repository feeds such variables and asserts it.
+- The snapshot holds `default` and the data sources that the members of the snapshot use.
+- The tool prints one line for each data source, with the place that it came from, and one line with the data sources that it could not describe:
+
+  ```text
+  Data source default: snowflake, database ANALYTICS, host ab12345.eu-west-1 (from the environment of Cube)
+  Data source events: bigquery, project example-project (from --data-source)
+  Data sources that the snapshot does not describe: postgres
+  ```
+
+- To stop the read of the environment, set `--no-data-sources-from-env`.
+- The data source mapping in the settings of the Cube integration is the override. If it names a warehouse integration for a data source, Coalesce Quality uses it and not the description of the snapshot.
+- With `--input` the tool sends the data sources of the file, and it does not read the environment.
 
 ## Inspect, edit and send a snapshot file
 
