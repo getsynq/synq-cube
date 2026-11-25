@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -64,6 +65,8 @@ type Client struct {
 	requestTimeout time.Duration
 	retries        int
 	retryBackoff   time.Duration
+	// noPostSQL is true after Cube answered `POST /v1/sql` with status 404 or 405.
+	noPostSQL atomic.Bool
 }
 
 // ClientOption changes a Client.
@@ -136,7 +139,7 @@ func (c *Client) Meta(ctx context.Context) ([]byte, error) {
 	return body, nil
 }
 
-// SQLQuery is a query of one member for `/v1/sql`.
+// SQLQuery is a query for `/v1/sql`. It has measures or dimensions, never the two.
 type SQLQuery struct {
 	Measures   []string `json:"measures,omitempty"`
 	Dimensions []string `json:"dimensions,omitempty"`
@@ -152,10 +155,13 @@ type SQLResult struct {
 	DataSource string
 	// SQL is the SQL text in the dialect of the data source.
 	SQL string
+	// AliasNameToMember maps the name of each output column of the SQL (`orders__revenue`) to
+	// its member (`orders.revenue`). Nil means that Cube did not report it.
+	AliasNameToMember map[string]string
 }
 
-// SQL returns the SQL that Cube generates for the query. Cube compiles the query and does not
-// run it.
+// SQL returns the SQL that Cube generates for the query, from `GET /v1/sql`. Cube compiles the
+// query and does not run it.
 func (c *Client) SQL(ctx context.Context, query SQLQuery) (*SQLResult, error) {
 	encoded, err := json.Marshal(query)
 	if err != nil {
@@ -165,10 +171,42 @@ func (c *Client) SQL(ctx context.Context, query SQLQuery) (*SQLResult, error) {
 	if err != nil {
 		return nil, err
 	}
+	return readSQLResult(body)
+}
+
+// SQLOfMembers returns the SQL that Cube generates for a query of many members, from
+// `POST /v1/sql`. The query is in the request body, so the length limit of a URL does not apply.
+//
+// A Cube that does not serve `POST /v1/sql` answers with status 404 or 405. The client then
+// sends this query and each later query with `GET /v1/sql`.
+func (c *Client) SQLOfMembers(ctx context.Context, query SQLQuery) (*SQLResult, error) {
+	if c.noPostSQL.Load() {
+		return c.SQL(ctx, query)
+	}
+	encoded, err := json.Marshal(struct {
+		Query SQLQuery `json:"query"`
+	}{Query: query})
+	if err != nil {
+		return nil, fmt.Errorf("cube: cannot write the query: %w", err)
+	}
+	body, err := c.do(ctx, http.MethodPost, "/v1/sql", encoded)
+	if err != nil {
+		var apiError *APIError
+		if errors.As(err, &apiError) && (apiError.StatusCode == http.StatusNotFound || apiError.StatusCode == http.StatusMethodNotAllowed) {
+			c.noPostSQL.Store(true)
+			return c.SQL(ctx, query)
+		}
+		return nil, err
+	}
+	return readSQLResult(body)
+}
+
+func readSQLResult(body []byte) (*SQLResult, error) {
 	var response struct {
 		SQL struct {
-			SQL        []json.RawMessage `json:"sql"`
-			DataSource string            `json:"dataSource"`
+			SQL               []json.RawMessage `json:"sql"`
+			DataSource        string            `json:"dataSource"`
+			AliasNameToMember json.RawMessage   `json:"aliasNameToMember"`
 		} `json:"sql"`
 	}
 	if err := json.Unmarshal(body, &response); err != nil {
@@ -181,7 +219,22 @@ func (c *Client) SQL(ctx context.Context, query SQLQuery) (*SQLResult, error) {
 	if err := json.Unmarshal(response.SQL.SQL[0], &text); err != nil || text == "" {
 		return nil, errors.New("the response of /v1/sql has no SQL text")
 	}
-	return &SQLResult{DataSource: response.SQL.DataSource, SQL: text}, nil
+	result := &SQLResult{DataSource: response.SQL.DataSource, SQL: text}
+	// A map that is not a map of texts is the same as no map: the caller then has no alias.
+	var aliases map[string]string
+	if len(response.SQL.AliasNameToMember) > 0 && json.Unmarshal(response.SQL.AliasNameToMember, &aliases) == nil {
+		result.AliasNameToMember = aliases
+	}
+	return result, nil
+}
+
+// sqlRequestCounterKey is the context key of the counter of `/v1/sql` requests.
+type sqlRequestCounterKey struct{}
+
+// withSQLRequestCounter returns a context that counts each `/v1/sql` request that is sent with
+// it, also a request that is sent again.
+func withSQLRequestCounter(ctx context.Context, counter *atomic.Int64) context.Context {
+	return context.WithValue(ctx, sqlRequestCounterKey{}, counter)
 }
 
 // ModelExport returns the response body of `POST /v1/model-export` of the Cube Cloud Metadata
@@ -247,6 +300,9 @@ func (c *Client) once(ctx context.Context, method string, path string, body []by
 	request, err := http.NewRequestWithContext(ctx, method, c.apiURL+path, reader)
 	if err != nil {
 		return nil, &permanentError{err: err}
+	}
+	if counter, ok := ctx.Value(sqlRequestCounterKey{}).(*atomic.Int64); ok && strings.HasPrefix(path, "/v1/sql") {
+		counter.Add(1)
 	}
 	request.Header.Set("Authorization", authorization)
 	request.Header.Set("Accept", "application/json")

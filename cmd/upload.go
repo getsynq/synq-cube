@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -18,6 +17,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/getsynq/synq-cube/cube"
+	"github.com/getsynq/synq-cube/internal/gitcontext"
 	"github.com/getsynq/synq-cube/internal/quality"
 	"github.com/getsynq/synq-cube/internal/region"
 )
@@ -42,6 +42,12 @@ const (
 	envCubeSkipModelExport      = "CUBE_SKIP_MODEL_EXPORT"
 	envCubeDataSources          = "CUBE_DATA_SOURCES"
 	envCubeNoDataSourcesFromEnv = "CUBE_NO_DATA_SOURCES_FROM_ENV"
+	envCubeBatchSize            = "CUBE_BATCH_SIZE"
+	envCubeGitURL               = "CUBE_GIT_URL"
+	envCubeGitBranch            = "CUBE_GIT_BRANCH"
+	envCubeGitCommit            = "CUBE_GIT_COMMIT"
+	envCubeModelPath            = "CUBE_MODEL_PATH"
+	envCubeNoGitContext         = "CUBE_NO_GIT_CONTEXT"
 )
 
 // Names of the flags that the command reads back.
@@ -54,6 +60,12 @@ const (
 	flagSkipModelExport      = "skip-model-export"
 	flagDataSource           = "data-source"
 	flagNoDataSourcesFromEnv = "no-data-sources-from-env"
+	flagBatchSize            = "batch-size"
+	flagGitURL               = "git-url"
+	flagGitBranch            = "git-branch"
+	flagGitCommit            = "git-commit"
+	flagModelPath            = "model-path"
+	flagNoGitContext         = "no-git-context"
 )
 
 // The flags that set how the command reads Cube. With --input the command does not read Cube,
@@ -61,7 +73,7 @@ const (
 var collectionFlags = []string{
 	"cube-api-url", "cube-security-context", "security-context-label", "cube-version",
 	"cube-cloud-url", "cube-cloud-deployment-id", "cube-cloud-environment-id",
-	"concurrency", "request-timeout", flagDataSource, flagNoDataSourcesFromEnv,
+	"concurrency", flagBatchSize, "request-timeout", flagDataSource, flagNoDataSourcesFromEnv, flagNoGitContext,
 }
 
 // stdinName is the value of --input that reads the standard input.
@@ -79,6 +91,12 @@ type uploadFlags struct {
 	cubeCloudDeploymentID  string
 	cubeCloudEnvironmentID string
 	concurrency            int
+	batchSize              int
+	gitURL                 string
+	gitBranch              string
+	gitCommit              string
+	modelPath              string
+	noGitContext           bool
 	requestTimeout         time.Duration
 	include                []string
 	exclude                []string
@@ -102,9 +120,16 @@ func newUploadCommand(deps Deps, deployment *region.Flags) *cobra.Command {
 The command sends two kinds of request to the Cube REST API:
 
   GET /v1/meta?extended   the compiled data model
-  GET /v1/sql             the SQL of one measure or one dimension, one request for each
+  POST /v1/sql            the SQL of the measures, and of the dimensions, of one
+                          cube or of one view: one request for many members
+  GET /v1/sql             the SQL of one measure or one dimension
 
 Cube compiles the SQL and does not run it. The command never requests /v1/load.
+
+One request holds at most --batch-size members. If Cube returns an error for a
+request, the command splits the members in two halves and asks again, down to
+one member. So one member for which Cube generates no SQL does not stop the SQL
+of the others. With --batch-size 1 the command sends one request for each member.
 
 Credential of Cube, the first one that is set:
 
@@ -135,7 +160,16 @@ Filters:
   leave parts of the data model out of the snapshot. They work on a collection
   and on a file. For Coalesce Quality a snapshot is the whole data model: a cube
   or a view that is not in the snapshot is removed from Coalesce Quality. A
-  filter is not a way to update a part of the data model.`,
+  filter is not a way to update a part of the data model.
+
+Git repository:
+
+  The snapshot names the git repository of the data model, so Coalesce Quality
+  can link each cube and each view to its file. The command takes it from
+  --git-url, --git-branch and --git-commit, then from the variables of GitHub
+  Actions or GitLab CI, then from the git checkout of the working directory.
+  It never sends a user name or a password of a URL. --no-git-context stops the
+  read of the variables and of the checkout.`,
 		Example: `  # Cube Core or a self-hosted Cube, with the API secret
   export CUBE_API_URL=https://cube.example.com/cubejs-api
   export CUBE_API_SECRET=...
@@ -171,6 +205,19 @@ Filters:
 	f.StringVar(&flags.cubeCloudEnvironmentID, "cube-cloud-environment-id", "",
 		"Id of the Cube Cloud environment. The default is the production environment (or $"+envCubeCloudEnvironmentID+")")
 	f.IntVar(&flags.concurrency, "concurrency", cube.DefaultConcurrency, "How many /v1/sql requests run at the same time")
+	f.IntVar(&flags.batchSize, flagBatchSize, cube.DefaultBatchSize,
+		"The largest count of members in one /v1/sql request. With 1, the command sends one request for each member (or $"+envCubeBatchSize+")")
+	f.StringVar(&flags.gitURL, flagGitURL, "",
+		"URL of the git repository that holds the files of the data model, for example https://github.com/example/analytics. "+
+			"The command removes a user name and a password from it (or $"+envCubeGitURL+")")
+	f.StringVar(&flags.gitBranch, flagGitBranch, "", "Branch of the data model in the git repository (or $"+envCubeGitBranch+")")
+	f.StringVar(&flags.gitCommit, flagGitCommit, "", "Commit of the data model in the git repository (or $"+envCubeGitCommit+")")
+	f.StringVar(&flags.modelPath, flagModelPath, "",
+		"Path of the directory of the data model in the git repository. Use . for the root of the repository. "+
+			"The default is model, if the git checkout has that directory (or $"+
+			envCubeModelPath+")")
+	f.BoolVar(&flags.noGitContext, flagNoGitContext, false,
+		"Do not read the git repository from the variables of a CI system and from the git checkout (or $"+envCubeNoGitContext+")")
 	f.DurationVar(&flags.requestTimeout, "request-timeout", cube.DefaultRequestTimeout, "Time limit of one request to Cube")
 	f.StringArrayVar(&flags.include, flagInclude, nil,
 		"Keep only the cubes and the views with a name that matches this glob pattern, for example 'orders*'. "+
@@ -203,6 +250,7 @@ Filters:
 }
 
 func runUpload(ctx context.Context, deps Deps, deployment *region.Flags, flags *uploadFlags, changed func(string) bool) error {
+	var err error
 	fromFile := flags.input != ""
 	if fromFile {
 		for _, name := range collectionFlags {
@@ -220,6 +268,16 @@ func runUpload(ctx context.Context, deps Deps, deployment *region.Flags, flags *
 	if flags.requestTimeout <= 0 {
 		return errors.New("--request-timeout must be more than 0")
 	}
+	batchSize := flags.batchSize
+	if text := os.Getenv(envCubeBatchSize); !fromFile && !changed(flagBatchSize) && text != "" {
+		batchSize, err = strconv.Atoi(text)
+		if err != nil {
+			return fmt.Errorf("%s is %q: set it to a number", envCubeBatchSize, text)
+		}
+	}
+	if batchSize < 1 {
+		return errors.New("--batch-size must be 1 or more")
+	}
 	filter, err := newFilter(flags, changed)
 	if err != nil {
 		return err
@@ -230,6 +288,10 @@ func runUpload(ctx context.Context, deps Deps, deployment *region.Flags, flags *
 		if err != nil {
 			return err
 		}
+	}
+	git, err := newGitSettings(ctx, deps, flags, changed, fromFile)
+	if err != nil {
+		return err
 	}
 
 	// The two sources of a snapshot. Each fails here for a wrong setting, before the connection
@@ -264,6 +326,7 @@ func runUpload(ctx context.Context, deps Deps, deployment *region.Flags, flags *
 	var report *cube.Report
 	if fromFile {
 		fmt.Fprintf(deps.Stdout, "Reading the snapshot from %s\n", inputName(flags.input))
+		git.applyTo(fileSnapshot)
 		snapshot, report, err = filterSnapshot(fileSnapshot, filter)
 		if err != nil {
 			return fmt.Errorf("cannot use the snapshot of %s: %w", inputName(flags.input), err)
@@ -272,6 +335,9 @@ func runUpload(ctx context.Context, deps Deps, deployment *region.Flags, flags *
 		fmt.Fprintf(deps.Stdout, "Reading the data model from %s\n", client.APIURL())
 		snapshot, report, err = cube.Collect(ctx, client, cube.Options{
 			Concurrency:            flags.concurrency,
+			BatchSize:              batchSize,
+			Git:                    git.context,
+			ModelPath:              git.modelPath,
 			SecurityContextLabel:   valueOrEnv(flags.securityContextLabel, envCubeSecurityContextLabel),
 			CubeVersion:            valueOrEnv(flags.cubeVersion, envCubeVersion),
 			Filter:                 filter,
@@ -282,8 +348,9 @@ func runUpload(ctx context.Context, deps Deps, deployment *region.Flags, flags *
 			return fmt.Errorf("cannot read the data model: %w", err)
 		}
 	}
-	printReport(deps, report, filter)
+	printReport(deps, report, filter, fromFile)
 	printDataSources(deps, snapshot, report, fromFile)
+	printGit(deps, snapshot, git, fromFile)
 	printWarnings(deps.Stderr, report.Warnings)
 
 	// The collector returns a plain struct. The message of the upload is built here, with the
@@ -390,11 +457,21 @@ func readSnapshot(deps Deps, input string) (*cube.Snapshot, error) {
 	if err := (protojson.UnmarshalOptions{DiscardUnknown: false}).Unmarshal(data, request); err != nil {
 		return nil, fmt.Errorf("%s is not a snapshot file: %w", inputName(input), err)
 	}
-	if len(request.GetMeta()) == 0 {
-		return nil, fmt.Errorf("%s is not a snapshot file: it has no \"meta\"", inputName(input))
+	if len(request.GetDataModel()) == 0 {
+		return nil, fmt.Errorf("%s is not a snapshot file: it has no \"dataModel\"", inputName(input))
 	}
-	if !hasCubesList(request.GetMeta()) {
-		return nil, fmt.Errorf("%s is not a snapshot file: \"meta\" is not a JSON object with a \"cubes\" list", inputName(input))
+	if !hasCubesList(request.GetDataModel()) {
+		return nil, fmt.Errorf("%s is not a snapshot file: \"dataModel\" is not a JSON object with a \"cubes\" list", inputName(input))
+	}
+	for i, generated := range request.GetGeneratedSql() {
+		if generated.GetSql() == "" || len(generated.GetMembers()) == 0 {
+			return nil, fmt.Errorf("%s is not a snapshot file: the entry %d of \"generatedSql\" has no \"sql\" or no \"members\"", inputName(input), i+1)
+		}
+		for _, member := range generated.GetMembers() {
+			if member.GetMember() == "" || member.GetColumn() == "" {
+				return nil, fmt.Errorf("%s is not a snapshot file: a member of the entry %d of \"generatedSql\" has no \"member\" or no \"column\"", inputName(input), i+1)
+			}
+		}
 	}
 	if request.GetCollectedAt() == nil || request.GetCollectedAt().CheckValid() != nil || request.GetCollectedAt().AsTime().Unix() <= 0 {
 		return nil, fmt.Errorf("%s is not a snapshot file: it has no \"collectedAt\"", inputName(input))
@@ -471,11 +548,15 @@ func newCubeClient(ctx context.Context, flags *uploadFlags) (*cube.Client, error
 	return cube.NewClient(apiURL, tokens, options...)
 }
 
-func printReport(deps Deps, report *cube.Report, filter cube.Filter) {
+func printReport(deps Deps, report *cube.Report, filter cube.Filter, fromFile bool) {
 	fmt.Fprintf(deps.Stdout, "Cubes: %d\n", report.Cubes)
 	fmt.Fprintf(deps.Stdout, "Views: %d\n", report.Views)
 	fmt.Fprintf(deps.Stdout, "Members: %d\n", report.Members)
+	fmt.Fprintf(deps.Stdout, "Members with SQL: %d, in %d SQL statements\n", report.MembersWithSQL, report.Statements)
 	fmt.Fprintf(deps.Stdout, "Members with an error: %d\n", report.MemberErrors)
+	if !fromFile {
+		fmt.Fprintf(deps.Stdout, "Requests to /v1/sql: %d\n", report.SQLRequests)
+	}
 	if report.ModelExport {
 		fmt.Fprintln(deps.Stdout, "Cube Cloud model export: yes")
 	}
@@ -568,17 +649,160 @@ func printDataSources(deps Deps, snapshot *cube.Snapshot, report *cube.Report, f
 		fmt.Fprintf(deps.Stdout, "Data source %s: %s (from %s)\n", source.Name, strings.Join(details, ", "), origin)
 	}
 	var missing []string
-	seen := map[string]bool{}
-	for _, member := range snapshot.MemberSQL {
-		if name := member.DataSource; name != "" && !described[name] && !seen[name] {
-			seen[name] = true
+	for _, name := range snapshot.UsedDataSources() {
+		if !described[name] {
 			missing = append(missing, name)
 		}
 	}
 	if len(missing) > 0 {
-		sort.Strings(missing)
 		fmt.Fprintf(deps.Stdout, "Data sources that the snapshot does not describe: %s\n", strings.Join(missing, ", "))
 	}
+}
+
+// gitSettings is the git repository of the data model, and where the command took it from.
+type gitSettings struct {
+	// context is nil if no setting and no place names a repository.
+	context *cube.GitContext
+	// origin says where context came from, for the output.
+	origin string
+	// modelPath is the directory of the data model in the repository. Nil means not known.
+	modelPath *string
+	// modelPathSet is true if a setting gave modelPath.
+	modelPathSet bool
+}
+
+// cleanModelPath returns a path from the root of the repository with `/` between the parts.
+// The root itself is the empty text: `.`, `/` and `./` are the root.
+func cleanModelPath(text string) string {
+	text = strings.ReplaceAll(strings.TrimSpace(text), "\\", "/")
+	parts := strings.FieldsFunc(text, func(r rune) bool { return r == '/' })
+	kept := parts[:0]
+	for _, part := range parts {
+		if part != "." {
+			kept = append(kept, part)
+		}
+	}
+	return strings.Join(kept, "/")
+}
+
+// newGitSettings reads the git repository of the data model. The settings win: --git-url,
+// --git-branch, --git-commit and --model-path, each with its variable. With no --git-url, the
+// command reads the variables of a CI system and the git checkout, and a setting of the branch
+// or of the commit replaces that value. With a snapshot file, the command reads only the
+// settings.
+func newGitSettings(ctx context.Context, deps Deps, flags *uploadFlags, changed func(string) bool, fromFile bool) (*gitSettings, error) {
+	rawURL := valueOrEnv(flags.gitURL, envCubeGitURL)
+	branch := valueOrEnv(flags.gitBranch, envCubeGitBranch)
+	commit := valueOrEnv(flags.gitCommit, envCubeGitCommit)
+	settings := &gitSettings{}
+	if text := valueOrEnv(flags.modelPath, envCubeModelPath); text != "" || changed(flagModelPath) {
+		modelPath := cleanModelPath(text)
+		settings.modelPath, settings.modelPathSet = &modelPath, true
+	}
+
+	if rawURL != "" {
+		cloneURL := gitcontext.SanitizeURL(rawURL)
+		if cloneURL == "" {
+			// The text can hold a credential, so the message does not repeat it.
+			return nil, fmt.Errorf("--%s is not the URL of a git repository: use a form like https://github.com/example/analytics", flagGitURL)
+		}
+		settings.context = &cube.GitContext{CloneURL: cloneURL, Branch: branch, CommitSHA: commit}
+		settings.origin = "the settings"
+		return settings, nil
+	}
+
+	skip := flags.noGitContext
+	if text := os.Getenv(envCubeNoGitContext); !changed(flagNoGitContext) && text != "" {
+		value, err := strconv.ParseBool(text)
+		if err != nil {
+			return nil, fmt.Errorf("%s is %q: set it to true or false", envCubeNoGitContext, text)
+		}
+		skip = value
+	}
+	if fromFile {
+		if branch != "" || commit != "" {
+			settings.context = &cube.GitContext{Branch: branch, CommitSHA: commit}
+		}
+		return settings, nil
+	}
+	if skip {
+		if branch != "" || commit != "" {
+			return nil, fmt.Errorf("--%s and --%s need --%s", flagGitBranch, flagGitCommit, flagGitURL)
+		}
+		return settings, nil
+	}
+	environ := deps.Environ
+	if environ == nil {
+		environ = os.Environ()
+	}
+	found := gitcontext.Detect(ctx, environ, deps.WorkDir)
+	if found.Git == nil {
+		if branch != "" || commit != "" {
+			return nil, fmt.Errorf("--%s and --%s need --%s: the command found no git repository", flagGitBranch, flagGitCommit, flagGitURL)
+		}
+		return settings, nil
+	}
+	settings.context = found.Git
+	settings.origin = string(found.Origin)
+	if branch != "" {
+		settings.context.Branch = branch
+	}
+	if commit != "" {
+		settings.context.CommitSHA = commit
+	}
+	if !settings.modelPathSet && found.ModelPath != "" {
+		modelPath := found.ModelPath
+		settings.modelPath = &modelPath
+	}
+	return settings, nil
+}
+
+// applyTo puts the settings on a snapshot from a file. A value of the file stays if no setting
+// replaces it.
+func (g *gitSettings) applyTo(snapshot *cube.Snapshot) {
+	if g.context != nil {
+		merged := cube.GitContext{}
+		if snapshot.Git != nil {
+			merged = *snapshot.Git
+		}
+		if g.context.CloneURL != "" {
+			merged.CloneURL = g.context.CloneURL
+		}
+		if g.context.Branch != "" {
+			merged.Branch = g.context.Branch
+		}
+		if g.context.CommitSHA != "" {
+			merged.CommitSHA = g.context.CommitSHA
+		}
+		if merged.CloneURL != "" {
+			snapshot.Git = &merged
+		}
+	}
+	if g.modelPathSet {
+		snapshot.ModelPath = g.modelPath
+	}
+}
+
+// printGit prints the git repository of the snapshot.
+func printGit(deps Deps, snapshot *cube.Snapshot, settings *gitSettings, fromFile bool) {
+	if snapshot.Git == nil {
+		return
+	}
+	details := []string{snapshot.Git.CloneURL}
+	if snapshot.Git.Branch != "" {
+		details = append(details, "branch "+snapshot.Git.Branch)
+	}
+	if snapshot.Git.CommitSHA != "" {
+		details = append(details, "commit "+snapshot.Git.CommitSHA)
+	}
+	if snapshot.ModelPath != nil {
+		details = append(details, "model path "+valueOr(*snapshot.ModelPath, "the root of the repository"))
+	}
+	origin := settings.origin
+	if fromFile && origin == "" {
+		origin = "the snapshot file"
+	}
+	fmt.Fprintf(deps.Stdout, "Git repository: %s (from %s)\n", strings.Join(details, ", "), origin)
 }
 
 func valueOr(value string, fallback string) string {

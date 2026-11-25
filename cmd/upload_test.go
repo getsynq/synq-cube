@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -79,6 +80,8 @@ type UploadSuite struct {
 	// environ is the environment of Cube that the command reads the data sources from. It is
 	// never the environment of the machine that runs the test.
 	environ []string
+	// workDir is the directory whose git checkout the command reads. It is in no checkout.
+	workDir string
 	stdout  bytes.Buffer
 	stderr  bytes.Buffer
 }
@@ -91,6 +94,7 @@ func (s *UploadSuite) SetupTest() {
 	t := s.T()
 	s.stdin = nil
 	s.environ = []string{}
+	s.workDir = t.TempDir()
 	s.stdout.Reset()
 	s.stderr.Reset()
 	s.tokenExchanges = nil
@@ -101,7 +105,8 @@ func (s *UploadSuite) SetupTest() {
 		"CUBE_API_URL", "CUBE_API_SECRET", "CUBE_API_TOKEN", "CUBE_SECURITY_CONTEXT", "CUBE_SECURITY_CONTEXT_LABEL", "CUBE_VERSION",
 		"CUBE_CLOUD_URL", "CUBE_CLOUD_API_KEY", "CUBE_CLOUD_DEPLOYMENT_ID", "CUBE_CLOUD_ENVIRONMENT_ID",
 		"CUBE_INCLUDE", "CUBE_EXCLUDE", "CUBE_SKIP_HIDDEN", "CUBE_SKIP_MEMBER_SQL", "CUBE_SKIP_MODEL_EXPORT",
-		"CUBE_DATA_SOURCES", "CUBE_NO_DATA_SOURCES_FROM_ENV",
+		"CUBE_DATA_SOURCES", "CUBE_NO_DATA_SOURCES_FROM_ENV", "CUBE_BATCH_SIZE",
+		"CUBE_GIT_URL", "CUBE_GIT_BRANCH", "CUBE_GIT_COMMIT", "CUBE_MODEL_PATH", "CUBE_NO_GIT_CONTEXT",
 		"QUALITY_TOKEN", "QUALITY_API_ENDPOINT", "QUALITY_REGION", "SYNQ_TOKEN", "SYNQ_API_ENDPOINT", "SYNQ_REGION",
 	} {
 		t.Setenv(name, "")
@@ -146,8 +151,35 @@ func (s *UploadSuite) SetupTest() {
 	}
 }
 
+// sqlMembers returns the members of all SQL statements of a snapshot. It fails if a statement
+// has no SQL text, or if a member has no output column or is in two statements.
+func (s *UploadSuite) sqlMembers(request *ingestcubev1.IngestSnapshotRequest) []string {
+	var names []string
+	seen := map[string]bool{}
+	for _, generated := range request.GetGeneratedSql() {
+		s.NotEmpty(generated.GetSql())
+		s.NotEmpty(generated.GetMembers())
+		for _, member := range generated.GetMembers() {
+			s.NotEmpty(member.GetColumn(), member.GetMember())
+			s.False(seen[member.GetMember()], member.GetMember())
+			seen[member.GetMember()] = true
+			names = append(names, member.GetMember())
+		}
+	}
+	return names
+}
+
+// requestedMembers returns the count of members in the `/v1/sql` requests to the fake Cube.
+func (s *UploadSuite) requestedMembers() int {
+	count := 0
+	for _, request := range s.cube.SQLRequests() {
+		count += len(request.Members)
+	}
+	return count
+}
+
 func (s *UploadSuite) run(args ...string) error {
-	root := cmd.NewRootCommand(cmd.Deps{Stdin: s.stdin, Environ: s.environ, Stdout: &s.stdout, Stderr: &s.stderr, QualityOptions: s.options})
+	root := cmd.NewRootCommand(cmd.Deps{Stdin: s.stdin, Environ: s.environ, WorkDir: s.workDir, Stdout: &s.stdout, Stderr: &s.stderr, QualityOptions: s.options})
 	root.SetArgs(args)
 	return root.ExecuteContext(s.T().Context())
 }
@@ -174,31 +206,33 @@ func (s *UploadSuite) TestUploadSendsTheSnapshot() {
 
 	s.Require().Len(s.service.requests, 1)
 	request := s.service.requests[0]
-	s.Equal(cubetest.MetaExtended(), request.GetMeta())
-	s.Len(request.GetMemberSql(), 254)
+	s.Equal(cubetest.MetaExtended(), request.GetDataModel())
+	s.Len(s.sqlMembers(request), 253)
+	s.NotContains(s.sqlMembers(request), "customers.lifetime_revenue")
 	s.Equal("full-read", request.GetSecurityContextLabel())
+	s.Nil(request.GitContext)
+	s.Nil(request.ModelPath)
 	s.Nil(request.CubeVersion)
 	s.Nil(request.ModelExport)
 	s.NotEmpty(request.GetUploaderVersion())
 	s.WithinDuration(time.Now(), request.GetCollectedAt().AsTime(), time.Minute)
-	withError := 0
-	for _, member := range request.GetMemberSql() {
-		if member.Error != nil {
-			withError++
-			s.Equal("customers.lifetime_revenue", member.GetMember())
-			continue
-		}
-		s.NotEmpty(member.GetSql(), member.GetMember())
-		s.NotEmpty(member.GetDataSource(), member.GetMember())
+	for _, generated := range request.GetGeneratedSql() {
+		s.NotEmpty(generated.GetDataSource())
+		s.True(generated.GetUngrouped())
 	}
-	s.Equal(1, withError)
+	s.Require().Len(request.GetMemberErrors(), 1)
+	s.Equal("customers.lifetime_revenue", request.GetMemberErrors()[0].GetMember())
+	s.Equal("Can't find join path", request.GetMemberErrors()[0].GetError())
 	s.LessOrEqual(s.cube.MaxConcurrentSQL(), 2)
 
 	out := s.stdout.String()
 	s.Contains(out, "Cubes: 14\n")
 	s.Contains(out, "Views: 6\n")
 	s.Contains(out, "Members: 254\n")
+	s.Contains(out, "Members with SQL: 253, in ")
 	s.Contains(out, "Members with an error: 1\n")
+	s.Contains(out, fmt.Sprintf("Requests to /v1/sql: %d\n", s.cube.Requests()[cubetest.BasePath+"/v1/sql"]))
+	s.NotContains(out, "Git repository")
 	s.Contains(out, "Sent the snapshot to Coalesce Quality, quality.example.com:443")
 	s.Contains(s.stderr.String(), "warning: customers.lifetime_revenue")
 	s.NotContains(out+s.stderr.String(), apiSecret)
@@ -236,7 +270,50 @@ func (s *UploadSuite) TestAReadyTokenWinsOverTheAPISecret() {
 
 	s.Require().NoError(s.run("upload"))
 	s.Require().Len(s.service.requests, 1)
-	s.Len(s.service.requests[0].GetMemberSql(), 254)
+	s.Len(s.sqlMembers(s.service.requests[0]), 254)
+}
+
+func (s *UploadSuite) TestBatchSize() {
+	s.T().Setenv("CUBE_API_URL", s.cube.APIURL())
+	s.T().Setenv("CUBE_API_SECRET", apiSecret)
+	output := filepath.Join(s.T().TempDir(), "snapshot.json")
+
+	// The default: one request for the measures and one for the dimensions of each cube and view.
+	s.Require().NoError(s.run("upload", "--dry-run", "--output", output))
+	s.Contains(s.stdout.String(), "Members with SQL: 254, in 39 SQL statements\n")
+	s.Contains(s.stdout.String(), "Requests to /v1/sql: 39\n")
+
+	// With 1, one request for each member.
+	before := len(s.cube.SQLRequests())
+	s.stdout.Reset()
+	s.Require().NoError(s.run("upload", "--dry-run", "--output", output, "--batch-size", "1"))
+	s.Contains(s.stdout.String(), "Members with SQL: 254, in 254 SQL statements\n")
+	s.Contains(s.stdout.String(), "Requests to /v1/sql: 254\n")
+	requests := s.cube.SQLRequests()[before:]
+	s.Len(requests, 254)
+	for _, request := range requests {
+		s.Len(request.Members, 1)
+		s.Equal(http.MethodGet, request.Method)
+	}
+	for _, generated := range s.readSnapshotFile(output).GetGeneratedSql() {
+		s.Len(generated.GetMembers(), 1)
+	}
+
+	// The variable, and the flag wins over it.
+	s.T().Setenv("CUBE_BATCH_SIZE", "5")
+	before = len(s.cube.SQLRequests())
+	s.Require().NoError(s.run("upload", "--dry-run", "--output", output))
+	for _, request := range s.cube.SQLRequests()[before:] {
+		s.LessOrEqual(len(request.Members), 5)
+	}
+	s.stdout.Reset()
+	s.Require().NoError(s.run("upload", "--dry-run", "--output", output, "--batch-size", "200"))
+	s.Contains(s.stdout.String(), "Requests to /v1/sql: 39\n")
+
+	s.T().Setenv("CUBE_BATCH_SIZE", "many")
+	s.ErrorContains(s.run("upload", "--dry-run", "--output", output), "CUBE_BATCH_SIZE")
+	s.T().Setenv("CUBE_BATCH_SIZE", "")
+	s.ErrorContains(s.run("upload", "--dry-run", "--output", output, "--batch-size", "0"), "--batch-size must be 1 or more")
 }
 
 func (s *UploadSuite) TestDryRunWritesTheSnapshotAndSendsNothing() {
@@ -258,8 +335,8 @@ func (s *UploadSuite) TestDryRunWritesTheSnapshotAndSendsNothing() {
 	s.Require().NoError(err)
 	snapshot := &ingestcubev1.IngestSnapshotRequest{}
 	s.Require().NoError(protojson.Unmarshal(data, snapshot))
-	s.Equal(cubetest.MetaExtended(), snapshot.GetMeta())
-	s.Len(snapshot.GetMemberSql(), 254)
+	s.Equal(cubetest.MetaExtended(), snapshot.GetDataModel())
+	s.Len(s.sqlMembers(snapshot), 254)
 	s.Equal("1.8.30", snapshot.GetCubeVersion())
 	s.NotContains(string(data), apiSecret)
 

@@ -28,6 +28,6 @@ func TestNewUploaderNeedsAToken(t *testing.T) {
 
 func TestUploadRefusesASnapshotOverTheLimit(t *testing.T) {
 	uploader := &Uploader{}
-	err := uploader.Upload(t.Context(), &ingestcubev1.IngestSnapshotRequest{Meta: make([]byte, MaxSnapshotSize+1)})
+	err := uploader.Upload(t.Context(), &ingestcubev1.IngestSnapshotRequest{DataModel: make([]byte, MaxSnapshotSize+1)})
 	require.ErrorContains(t, err, "the limit of one upload")
 }

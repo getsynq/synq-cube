@@ -258,3 +258,26 @@ func (s *DataSourceSuite) TestApplyKeepsTheDataSources() {
 	s.Require().NoError(err)
 	s.Equal(sources, applied.DataSources)
 }
+
+// The host of a data source has no scheme, no user name, no port and no path.
+func (s *DataSourceSuite) TestTheHostHasNoSchemeAndNoPort() {
+	snapshot, _, err := cube.Collect(s.T().Context(), s.client(), cube.Options{
+		Filter: cube.Filter{SkipMemberSQL: true},
+		DataSources: []cube.DataSource{
+			{Name: "default", Type: "postgres", Host: "https://db.example.com:5432/analytics"},
+			{Name: "a", Type: "postgres", Host: "db.example.com:5432"},
+			{Name: "b", Type: "snowflake", Host: "ab12345.eu-west-1"},
+			{Name: "c", Type: "postgres", Host: "postgres://user@[2001:db8::1]:5432"},
+			{Name: "d", Type: "postgres", Host: " db.example.com "},
+			{Name: "e", Type: "bigquery"},
+		},
+	})
+	s.Require().NoError(err)
+	hosts := map[string]string{}
+	for _, source := range snapshot.DataSources {
+		hosts[source.Name] = source.Host
+	}
+	s.Equal(map[string]string{
+		"default": "db.example.com", "a": "db.example.com", "b": "ab12345.eu-west-1", "c": "2001:db8::1", "d": "db.example.com", "e": "",
+	}, hosts)
+}

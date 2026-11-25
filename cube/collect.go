@@ -3,8 +3,8 @@ package cube
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -20,6 +20,11 @@ type Options struct {
 	// Concurrency is how many `/v1/sql` requests run at the same time. Zero or less means
 	// DefaultConcurrency.
 	Concurrency int
+	// BatchSize is the largest count of members in one `/v1/sql` request. Collect sends one
+	// request for the measures and one for the dimensions of each cube and each view, and it
+	// splits a longer list. Zero or less means DefaultBatchSize. With 1, Collect sends one
+	// request for each member, and each entry of Snapshot.GeneratedSQL has one member.
+	BatchSize int
 	// SecurityContextLabel is a name for the security context of the token (`full-read`). It is
 	// never the security context itself.
 	SecurityContextLabel string
@@ -37,7 +42,14 @@ type Options struct {
 	// the result of DataSourcesFromEnv. An entry of Cube Cloud with the same name wins over it.
 	// Collect itself reads no environment variable.
 	EnvironmentDataSources []DataSource
-	// Now gives the time of the snapshot. Nil means time.Now.
+	// Git names the git repository that holds the files of the data model. Nil means that the
+	// caller does not know it. Collect copies it to the snapshot.
+	Git *GitContext
+	// ModelPath is the path of the directory of the data model in the repository. Nil means
+	// that the caller does not know it. Collect copies it to the snapshot.
+	ModelPath *string
+	// Now gives the time of the snapshot: Collect calls it one time, before its first request
+	// to Cube. Nil means time.Now.
 	Now func() time.Time
 }
 
@@ -49,11 +61,18 @@ type Report struct {
 	Views int
 	// Members is the count of measures and dimensions of all cubes and views.
 	Members int
+	// MembersWithSQL is the count of members for which Cube generated SQL.
+	MembersWithSQL int
 	// MemberErrors is the count of members for which Cube did not generate SQL.
 	MemberErrors int
 	// GroupedMembers is the count of members for which Cube generated SQL only for a query
 	// without `ungrouped`.
 	GroupedMembers int
+	// Statements is the count of SQL statements, the entries of Snapshot.GeneratedSQL.
+	Statements int
+	// SQLRequests is the count of `/v1/sql` requests that the collection sent, with the
+	// requests that it sent again. Describe does not fill it.
+	SQLRequests int
 	// ModelExport is true if the snapshot has the response of `/v1/model-export`.
 	ModelExport bool
 	// LeftOut says what the filter left out. In a report of Collect, ModelExportSkipped is true
@@ -66,13 +85,13 @@ type Report struct {
 	Warnings []string
 }
 
-// Describe counts what a snapshot holds: the cubes, the views and the members of Meta, the
-// members with an error and the grouped members of MemberSQL, and the model export. The report
-// has no warnings and nothing left out.
+// Describe counts what a snapshot holds: the cubes, the views and the members of DataModel, the
+// members with SQL and the grouped members of GeneratedSQL, the members of MemberErrors, and
+// the model export. The report has no warnings, no count of requests and nothing left out.
 //
-// Describe returns an error if Meta is not a data model.
+// Describe returns an error if DataModel is not a data model.
 func Describe(snapshot *Snapshot) (*Report, error) {
-	meta, err := cubemeta.Parse(snapshot.Meta)
+	meta, err := cubemeta.Parse(snapshot.DataModel)
 	if err != nil {
 		return nil, err
 	}
@@ -85,22 +104,32 @@ func Describe(snapshot *Snapshot) (*Report, error) {
 		}
 		report.Members += len(c.Members())
 	}
-	for _, member := range snapshot.MemberSQL {
-		if member.Error != "" {
-			report.MemberErrors++
-		} else if !member.Ungrouped {
-			report.GroupedMembers++
+	report.countSQL(snapshot)
+	return report, nil
+}
+
+// countSQL counts the members with SQL, the members with an error, the grouped members and the
+// statements of the snapshot.
+func (r *Report) countSQL(snapshot *Snapshot) {
+	r.MemberErrors = len(snapshot.MemberErrors)
+	r.Statements = len(snapshot.GeneratedSQL)
+	for _, generated := range snapshot.GeneratedSQL {
+		r.MembersWithSQL += len(generated.Members)
+		if !generated.Ungrouped {
+			r.GroupedMembers += len(generated.Members)
 		}
 	}
-	return report, nil
 }
 
 // Collect reads the data model of a Cube deployment and returns it as one snapshot.
 //
-// It requests `/v1/meta?extended`, then `/v1/sql` for each measure and each dimension of each
-// cube and view. A member for which Cube returns an error stays in the snapshot with the error
-// text. If the client uses a CloudTokenSource, Collect requests `/v1/model-export` too, and a
-// failure of that request is a warning.
+// It requests `/v1/meta?extended`, then `/v1/sql` for the measures and for the dimensions of
+// each cube and each view: one request for at most Options.BatchSize members. The SQL of a
+// request is one entry of Snapshot.GeneratedSQL. If Cube returns an error for a request of many
+// members, Collect splits the members in two halves and asks again, down to one member. A member
+// for which Cube returns an error is in Snapshot.MemberErrors with the error text. If the client
+// uses a CloudTokenSource, Collect requests `/v1/model-export` too, and a failure of that
+// request is a warning.
 //
 // The snapshot says what each data source is, if the caller or Cube Cloud says it: the entries
 // of Options.DataSources, then the response of `/v1/data-sources` of Cube Cloud, then the
@@ -123,13 +152,17 @@ func Collect(ctx context.Context, client *Client, options Options) (*Snapshot, *
 		now = time.Now
 	}
 
+	// The time of a snapshot is the time at which the collection started.
+	collectedAt := now()
 	metaBody, err := client.Meta(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 	snapshot := &Snapshot{
-		Meta:                 metaBody,
-		CollectedAt:          now(),
+		DataModel:            metaBody,
+		Git:                  options.Git,
+		ModelPath:            options.ModelPath,
+		CollectedAt:          collectedAt,
 		CubeVersion:          options.CubeVersion,
 		SecurityContextLabel: options.SecurityContextLabel,
 	}
@@ -143,39 +176,40 @@ func Collect(ctx context.Context, client *Client, options Options) (*Snapshot, *
 	if removed.any {
 		report.Warnings = lostLineageWarnings(meta, removed.names)
 	}
-	var targets []memberTarget
+	batchSize := options.BatchSize
+	if batchSize <= 0 {
+		batchSize = DefaultBatchSize
+	}
+	var batches []memberBatch
 	for _, c := range meta.Cubes {
 		if c.IsView() {
 			report.Views++
 		} else {
 			report.Cubes++
 		}
-		for _, member := range c.Members() {
-			targets = append(targets, memberTarget{name: member.Name, kind: member.Kind})
-		}
+		report.Members += len(c.Members())
+		batches = append(batches, memberBatches(c, batchSize)...)
 	}
-	report.Members = len(targets)
 	if filter.SkipMemberSQL {
 		report.MemberSQLSkipped = true
-		targets = nil
+		batches = nil
 	}
 
 	concurrency := options.Concurrency
 	if concurrency <= 0 {
 		concurrency = DefaultConcurrency
 	}
-	var results []MemberSQL
-	if len(targets) > 0 {
-		results = make([]MemberSQL, len(targets))
-	}
-	group, groupCtx := errgroup.WithContext(ctx)
+	var requests atomic.Int64
+	collector := &batchCollector{client: client}
+	results := make([]batchResult, len(batches))
+	group, groupCtx := errgroup.WithContext(withSQLRequestCounter(ctx, &requests))
 	group.SetLimit(concurrency)
-	for i, target := range targets {
+	for i, batch := range batches {
 		group.Go(func() error {
 			if err := groupCtx.Err(); err != nil {
 				return err
 			}
-			results[i] = memberSQL(groupCtx, client, target)
+			results[i] = collector.collect(groupCtx, batch)
 			return groupCtx.Err()
 		})
 	}
@@ -183,16 +217,14 @@ func Collect(ctx context.Context, client *Client, options Options) (*Snapshot, *
 		return nil, nil, fmt.Errorf("cube: the collection of the member SQL stopped: %w", err)
 	}
 	for _, result := range results {
-		if result.Error != "" {
-			report.MemberErrors++
-			report.Warnings = append(report.Warnings, fmt.Sprintf("%s: Cube generated no SQL: %s", result.Member, result.Error))
-			continue
-		}
-		if !result.Ungrouped {
-			report.GroupedMembers++
-		}
+		snapshot.GeneratedSQL = append(snapshot.GeneratedSQL, result.generated...)
+		snapshot.MemberErrors = append(snapshot.MemberErrors, result.errors...)
 	}
-	snapshot.MemberSQL = results
+	for _, member := range snapshot.MemberErrors {
+		report.Warnings = append(report.Warnings, fmt.Sprintf("%s: Cube generated no SQL: %s", member.Member, member.Error))
+	}
+	report.countSQL(snapshot)
+	report.SQLRequests = int(requests.Load())
 
 	lists := []originList{{origin: OriginEnvironment, sources: options.EnvironmentDataSources}}
 	if client.Cloud() {
@@ -207,7 +239,7 @@ func Collect(ctx context.Context, client *Client, options Options) (*Snapshot, *
 	}
 	lists = append(lists, originList{origin: OriginSetting, sources: options.DataSources})
 	merged, origins := mergeDataSources(lists...)
-	snapshot.DataSources = usedDataSources(merged, results)
+	snapshot.DataSources = usedDataSources(merged, snapshot)
 	if len(snapshot.DataSources) > 0 {
 		report.DataSourceOrigins = make(map[string]DataSourceOrigin, len(snapshot.DataSources))
 		for _, source := range snapshot.DataSources {
@@ -231,48 +263,6 @@ func Collect(ctx context.Context, client *Client, options Options) (*Snapshot, *
 		}
 	}
 	return snapshot, report, nil
-}
-
-type memberTarget struct {
-	name string
-	kind cubemeta.MemberKind
-}
-
-// memberSQL asks Cube for the SQL of one member. It asks for an ungrouped query first. If Cube
-// returns an error, it asks again without `ungrouped`.
-func memberSQL(ctx context.Context, client *Client, target memberTarget) MemberSQL {
-	query := SQLQuery{Ungrouped: true, Limit: 1}
-	if target.kind == cubemeta.KindMeasure {
-		query.Measures = []string{target.name}
-	} else {
-		query.Dimensions = []string{target.name}
-	}
-	result, err := client.SQL(ctx, query)
-	if err != nil && ctx.Err() == nil {
-		query.Ungrouped = false
-		result, err = client.SQL(ctx, query)
-	}
-	member := MemberSQL{Member: target.name, Ungrouped: query.Ungrouped}
-	if err != nil {
-		member.Error = errorText(err)
-		return member
-	}
-	member.SQL = result.SQL
-	member.DataSource = result.DataSource
-	return member
-}
-
-// errorText is the error text of Cube, if the failure is a response of Cube.
-func errorText(err error) string {
-	var apiError *APIError
-	if errors.As(err, &apiError) && apiError.Message != "" {
-		return apiError.Message
-	}
-	// An empty Error means that the member has SQL, so a failure always has a text.
-	if text := err.Error(); text != "" {
-		return text
-	}
-	return "unknown error"
 }
 
 // collectModelExport returns the response of `/v1/model-export`, or a warning.

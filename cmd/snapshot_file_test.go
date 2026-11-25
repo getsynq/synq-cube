@@ -47,7 +47,7 @@ func (s *UploadSuite) writeRequest(request *ingestcubev1.IngestSnapshotRequest) 
 }
 
 func (s *UploadSuite) names(request *ingestcubev1.IngestSnapshotRequest) []string {
-	meta, err := cubemeta.Parse(request.GetMeta())
+	meta, err := cubemeta.Parse(request.GetDataModel())
 	s.Require().NoError(err)
 	names := make([]string, 0, len(meta.Cubes))
 	for _, c := range meta.Cubes {
@@ -60,8 +60,8 @@ func (s *UploadSuite) TestInputSendsTheSnapshotOfTheFile() {
 	file := s.writeSnapshotFile()
 	written := s.readSnapshotFile(file)
 	// The uploader fields of a file are not sent: the command sends its own.
-	written.UploaderVersion = "9.9.9"
-	written.UploaderBuildTime = "1999-01-01T00:00:00Z"
+	otherVersion, otherTime := "9.9.9", "1999-01-01T00:00:00Z"
+	written.UploaderVersion, written.UploaderBuildTime = &otherVersion, &otherTime
 	file = s.writeRequest(written)
 	requestsToCube := s.cube.Requests()
 	s.T().Setenv("QUALITY_TOKEN", integrationToken)
@@ -78,13 +78,13 @@ func (s *UploadSuite) TestInputSendsTheSnapshotOfTheFile() {
 
 	// But for the uploader fields, the request is the file, byte for byte.
 	want := proto.Clone(written).(*ingestcubev1.IngestSnapshotRequest)
-	want.UploaderVersion, want.UploaderBuildTime = sent.GetUploaderVersion(), sent.GetUploaderBuildTime()
+	want.UploaderVersion, want.UploaderBuildTime = sent.UploaderVersion, sent.UploaderBuildTime
 	wantBytes, err := proto.MarshalOptions{Deterministic: true}.Marshal(want)
 	s.Require().NoError(err)
 	sentBytes, err := proto.MarshalOptions{Deterministic: true}.Marshal(sent)
 	s.Require().NoError(err)
 	s.True(bytes.Equal(wantBytes, sentBytes))
-	s.Equal(cubetest.MetaExtended(), sent.GetMeta())
+	s.Equal(cubetest.MetaExtended(), sent.GetDataModel())
 	s.Equal("1.8.30", sent.GetCubeVersion())
 	s.Equal("full-read", sent.GetSecurityContextLabel())
 
@@ -108,7 +108,7 @@ func (s *UploadSuite) TestInputFromTheStandardInput() {
 
 	s.Require().NoError(s.run("upload", "--input", "-"))
 	s.Require().Len(s.service.requests, 1)
-	s.Len(s.service.requests[0].GetMemberSql(), 254)
+	s.Len(s.sqlMembers(s.service.requests[0]), 254)
 	s.Contains(s.stdout.String(), "Reading the snapshot from the standard input")
 }
 
@@ -131,7 +131,8 @@ func (s *UploadSuite) TestInputWithDryRunOnlyChecksTheFile() {
 func (s *UploadSuite) TestInputWithOutputWritesTheFileAgain() {
 	file := s.writeSnapshotFile()
 	written := s.readSnapshotFile(file)
-	written.UploaderVersion = "9.9.9"
+	otherVersion := "9.9.9"
+	written.UploaderVersion = &otherVersion
 	// A file in one line, as a tool can write it.
 	compact := s.writeRequest(written)
 
@@ -142,7 +143,7 @@ func (s *UploadSuite) TestInputWithOutputWritesTheFileAgain() {
 	s.Greater(strings.Count(string(data), "\n"), 254)
 	again := s.readSnapshotFile(compact)
 	s.NotEqual("9.9.9", again.GetUploaderVersion())
-	again.UploaderVersion, again.UploaderBuildTime = written.GetUploaderVersion(), written.GetUploaderBuildTime()
+	again.UploaderVersion, again.UploaderBuildTime = written.UploaderVersion, written.UploaderBuildTime
 	s.True(proto.Equal(written, again))
 }
 
@@ -168,20 +169,31 @@ func (s *UploadSuite) TestInputWithAFilterCutsTheFileDown() {
 	for _, name := range names {
 		s.False(strings.HasPrefix(name, "pg_") || name == "calendar" || name == "events_internal" || name == "product_snapshots", name)
 	}
-	for _, member := range cut.GetMemberSql() {
-		owner, _, _ := strings.Cut(member.GetMember(), ".")
-		s.Contains(names, owner, member.GetMember())
+	for _, member := range s.sqlMembers(cut) {
+		owner, _, _ := strings.Cut(member, ".")
+		s.Contains(names, owner, member)
 	}
-	s.Less(len(cut.GetMemberSql()), 254-36)
+	s.Less(len(s.sqlMembers(cut)), 254-36)
+	// --skip-hidden removed members from a statement that stays. Its SQL text did not change.
+	whole := s.readSnapshotFile(file)
+	shorter := 0
+	for _, generated := range cut.GetGeneratedSql() {
+		for _, before := range whole.GetGeneratedSql() {
+			if before.GetSql() == generated.GetSql() && len(generated.GetMembers()) < len(before.GetMembers()) {
+				shorter++
+			}
+		}
+	}
+	s.Positive(shorter)
 	// The file that was read is not changed.
-	s.Len(s.readSnapshotFile(file).GetMemberSql(), 254)
+	s.Len(s.sqlMembers(whole), 254)
 
 	// The file that was cut down can be sent.
 	s.T().Setenv("QUALITY_TOKEN", integrationToken)
 	s.Require().NoError(s.run("upload", "--input", smaller, "--skip-member-sql"))
 	s.Require().Len(s.service.requests, 1)
 	s.Equal(names, s.names(s.service.requests[0]))
-	s.Empty(s.service.requests[0].GetMemberSql())
+	s.Empty(s.service.requests[0].GetGeneratedSql())
 	s.Contains(s.stdout.String(), "Left out by --skip-member-sql")
 }
 
@@ -221,23 +233,30 @@ func (s *UploadSuite) TestInputRefusesABrokenFile() {
 	dir := s.T().TempDir()
 
 	noMeta := proto.Clone(valid).(*ingestcubev1.IngestSnapshotRequest)
-	noMeta.Meta = nil
+	noMeta.DataModel = nil
 	noCubes := proto.Clone(valid).(*ingestcubev1.IngestSnapshotRequest)
-	noCubes.Meta = []byte(`{"cubes": "none"}`)
+	noCubes.DataModel = []byte(`{"cubes": "none"}`)
 	notJSON := proto.Clone(valid).(*ingestcubev1.IngestSnapshotRequest)
-	notJSON.Meta = []byte(`not JSON`)
+	notJSON.DataModel = []byte(`not JSON`)
 	noTime := proto.Clone(valid).(*ingestcubev1.IngestSnapshotRequest)
 	noTime.CollectedAt = nil
+	noColumn := proto.Clone(valid).(*ingestcubev1.IngestSnapshotRequest)
+	noColumn.GetGeneratedSql()[0].GetMembers()[0].Column = ""
+	noMembers := proto.Clone(valid).(*ingestcubev1.IngestSnapshotRequest)
+	noMembers.GetGeneratedSql()[0].Members = nil
 
 	for name, test := range map[string]struct {
 		content string
 		message string
 	}{
-		"cut off":          {content: `{"meta": "e30=", "memberSql": [`, message: "is not a snapshot file"},
+		"cut off":          {content: `{"dataModel": "e30=", "generatedSql": [`, message: "is not a snapshot file"},
 		"not a snapshot":   {content: `[1, 2, 3]`, message: "is not a snapshot file"},
 		"empty":            {content: ``, message: "is not a snapshot file"},
-		"unknown field":    {content: `{"meta": "eyJjdWJlcyI6W119", "collectedAt": "2026-03-04T05:06:07Z", "memberSQL": []}`, message: "memberSQL"},
-		"no meta":          {content: s.json(noMeta), message: `it has no "meta"`},
+		"unknown field":    {content: `{"dataModel": "eyJjdWJlcyI6W119", "collectedAt": "2026-03-04T05:06:07Z", "generatedSQL": []}`, message: "generatedSQL"},
+		"older format":     {content: `{"meta": "eyJjdWJlcyI6W119", "collectedAt": "2026-03-04T05:06:07Z", "memberSql": []}`, message: "is not a snapshot file"},
+		"no meta":          {content: s.json(noMeta), message: `it has no "dataModel"`},
+		"no column":        {content: s.json(noColumn), message: `no "member" or no "column"`},
+		"no members":       {content: s.json(noMembers), message: `no "sql" or no "members"`},
 		"no cubes list":    {content: s.json(noCubes), message: `"cubes" list`},
 		"meta is not JSON": {content: s.json(notJSON), message: `"cubes" list`},
 		"no collected at":  {content: s.json(noTime), message: `it has no "collectedAt"`},

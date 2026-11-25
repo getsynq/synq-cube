@@ -1,13 +1,16 @@
 // Package cubetest is a fake Cube REST API for tests. It serves a recorded response of
-// `/v1/meta?extended` and answers `/v1/sql` from the recorded SQL of each member. The recording
-// is from a sample project on Cube Core.
+// `/v1/meta?extended` and answers `/v1/sql` from the recorded SQL of each member. It answers a
+// query of many members with one statement that it builds from the recorded SQL of each member.
+// The recording is from a sample project on Cube Core.
 package cubetest
 
 import (
 	_ "embed"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -56,10 +59,22 @@ type Server struct {
 	MetaStatus int
 	// Authorization is the `Authorization` header that a request must have. Empty means no check.
 	Authorization string
-	// ErrorMembers gives the error text of members for which no query compiles.
+	// ErrorMembers gives the error text of members for which no query compiles. A query of many
+	// members that holds one of them does not compile.
 	ErrorMembers map[string]string
 	// GroupedOnlyMembers lists members for which only a query without `ungrouped` compiles.
 	GroupedOnlyMembers map[string]bool
+	// NoAliasMembers lists members that are not in `aliasNameToMember` of the response of a
+	// query of many members. The response of a query of the member alone has it.
+	NoAliasMembers map[string]bool
+	// NoAliases makes each response have no `aliasNameToMember`.
+	NoAliases bool
+	// NoPostSQL makes `POST /v1/sql` answer with status 404, as a Cube that serves only the GET
+	// form.
+	NoPostSQL bool
+	// MaxURLLength is the longest URL of a GET request. A longer URL gets status 431. Zero
+	// means no limit.
+	MaxURLLength int
 	// ContinueWaitMembers lists members whose first request gets the "Continue wait" response.
 	ContinueWaitMembers map[string]bool
 	// UnavailableMembers lists members whose first request gets status 503.
@@ -74,6 +89,7 @@ type Server struct {
 	members map[string]Member
 
 	mu        sync.Mutex
+	queries   []SQLRequest
 	paths     map[string]int
 	firstSeen map[string]bool
 	inFlight  atomic.Int64
@@ -111,6 +127,30 @@ func (s *Server) Requests() map[string]int {
 	return out
 }
 
+// SQLRequest is one `/v1/sql` request that the fake got.
+type SQLRequest struct {
+	// Method is GET or POST.
+	Method string
+	// Members holds the measures or the dimensions of the query.
+	Members []string
+	// Ungrouped is the `ungrouped` property of the query.
+	Ungrouped bool
+}
+
+// SQLRequests returns each `/v1/sql` request with a query that the fake could read, in the
+// order of arrival.
+func (s *Server) SQLRequests() []SQLRequest {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append([]SQLRequest(nil), s.queries...)
+}
+
+// Alias returns the name of the output column of a member in a statement of the fake
+// (`orders__revenue` for `orders.revenue`), as Cube names it.
+func Alias(member string) string {
+	return strings.ReplaceAll(member, ".", "__")
+}
+
 // MaxConcurrentSQL returns the largest count of `/v1/sql` requests that ran at the same time.
 func (s *Server) MaxConcurrentSQL() int {
 	return int(s.maxFlight.Load())
@@ -138,7 +178,21 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(s.Meta)
 	case r.Method == http.MethodGet && r.URL.Path == BasePath+"/v1/sql":
-		s.serveSQL(w, r)
+		if s.MaxURLLength > 0 && len(r.URL.RequestURI()) > s.MaxURLLength {
+			writeError(w, http.StatusRequestHeaderFieldsTooLarge, "Request Header Fields Too Large")
+			return
+		}
+		s.serveSQL(w, r, []byte(r.URL.Query().Get("query")))
+	case r.Method == http.MethodPost && r.URL.Path == BasePath+"/v1/sql" && !s.NoPostSQL:
+		var body struct {
+			Query json.RawMessage `json:"query"`
+		}
+		data, _ := io.ReadAll(r.Body)
+		if err := json.Unmarshal(data, &body); err != nil {
+			writeError(w, http.StatusBadRequest, "Query param is required")
+			return
+		}
+		s.serveSQL(w, r, body.Query)
 	case r.Method == http.MethodGet && r.URL.Path == BasePath+"/v1/data-sources":
 		if s.DataSources == nil {
 			writeError(w, http.StatusNotFound, "Not found")
@@ -158,7 +212,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) serveSQL(w http.ResponseWriter, r *http.Request) {
+func (s *Server) serveSQL(w http.ResponseWriter, r *http.Request, queryText []byte) {
 	current := s.inFlight.Add(1)
 	defer s.inFlight.Add(-1)
 	for {
@@ -177,55 +231,106 @@ func (s *Server) serveSQL(w http.ResponseWriter, r *http.Request) {
 		Ungrouped  bool     `json:"ungrouped"`
 		Limit      int      `json:"limit"`
 	}
-	if err := json.Unmarshal([]byte(r.URL.Query().Get("query")), &query); err != nil {
+	if err := json.Unmarshal(queryText, &query); err != nil {
 		writeError(w, http.StatusBadRequest, "Query param is required")
 		return
 	}
-	names := append(append([]string{}, query.Measures...), query.Dimensions...)
-	if len(names) != 1 || query.Limit != 1 {
-		writeError(w, http.StatusBadRequest, "the fake takes a query of one member with limit 1")
+	if len(query.Measures) > 0 && len(query.Dimensions) > 0 {
+		writeError(w, http.StatusBadRequest, "the fake takes a query of measures or a query of dimensions")
 		return
 	}
-	name := names[0]
-	member, found := s.members[name]
-	wantKind := "dimension"
-	if len(query.Measures) == 1 {
-		wantKind = "measure"
+	names, wantKind := query.Dimensions, "dimension"
+	if len(query.Measures) > 0 {
+		names, wantKind = query.Measures, "measure"
 	}
-	if !found || member.Kind != wantKind {
-		writeError(w, http.StatusBadRequest, "'"+name+"' not found")
+	if len(names) == 0 || query.Limit != 1 {
+		writeError(w, http.StatusBadRequest, "the fake takes a query of one member or more with limit 1")
 		return
+	}
+	s.mu.Lock()
+	s.queries = append(s.queries, SQLRequest{Method: r.Method, Members: names, Ungrouped: query.Ungrouped})
+	s.mu.Unlock()
+
+	members := make([]Member, 0, len(names))
+	for _, name := range names {
+		member, found := s.members[name]
+		if !found || member.Kind != wantKind {
+			writeError(w, http.StatusBadRequest, "'"+name+"' not found")
+			return
+		}
+		if member.Cube != members0(members, member).Cube {
+			writeError(w, http.StatusBadRequest, "the fake takes a query of members of one cube or of one view")
+			return
+		}
+		members = append(members, member)
 	}
 
+	// The first request that holds a member is the first request of each member of the query.
+	continueWait, unavailable := false, false
 	s.mu.Lock()
-	first := !s.firstSeen[name]
-	s.firstSeen[name] = true
+	for _, name := range names {
+		first := !s.firstSeen[name]
+		s.firstSeen[name] = true
+		continueWait = continueWait || (first && s.ContinueWaitMembers[name])
+		unavailable = unavailable || (first && s.UnavailableMembers[name])
+	}
 	s.mu.Unlock()
-	if first && s.ContinueWaitMembers[name] {
+	if continueWait {
 		writeError(w, http.StatusOK, "Continue wait")
 		return
 	}
-	if first && s.UnavailableMembers[name] {
+	if unavailable {
 		writeError(w, http.StatusServiceUnavailable, "Service unavailable")
 		return
 	}
-	if text, broken := s.ErrorMembers[name]; broken {
-		writeError(w, http.StatusBadRequest, text)
-		return
+	for _, name := range names {
+		if text, broken := s.ErrorMembers[name]; broken {
+			writeError(w, http.StatusBadRequest, text)
+			return
+		}
 	}
-	if query.Ungrouped && s.GroupedOnlyMembers[name] {
-		writeError(w, http.StatusBadRequest, "Ungrouped query is not supported for "+name)
-		return
+	for _, name := range names {
+		if query.Ungrouped && s.GroupedOnlyMembers[name] {
+			writeError(w, http.StatusBadRequest, "Ungrouped query is not supported for "+name)
+			return
+		}
+	}
+
+	// The SQL of one member is the recording. The SQL of many members is one text with the
+	// output column and the recorded SQL of each member.
+	text := members[0].SQL
+	if len(members) > 1 {
+		parts := make([]string, 0, len(members))
+		for _, member := range members {
+			parts = append(parts, "-- \""+Alias(member.Member)+"\"\n"+member.SQL)
+		}
+		text = strings.Join(parts, "\n")
+	}
+	sql := map[string]any{
+		"sql":             []any{text, []any{}},
+		"dataSource":      members[0].DataSource,
+		"external":        false,
+		"preAggregations": []any{},
+	}
+	if !s.NoAliases {
+		aliases := map[string]string{}
+		for _, member := range members {
+			if len(members) == 1 || !s.NoAliasMembers[member.Member] {
+				aliases[Alias(member.Member)] = member.Member
+			}
+		}
+		sql["aliasNameToMember"] = aliases
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]any{
-		"sql": map[string]any{
-			"sql":             []any{member.SQL, []any{}},
-			"dataSource":      member.DataSource,
-			"external":        false,
-			"preAggregations": []any{},
-		},
-	})
+	_ = json.NewEncoder(w).Encode(map[string]any{"sql": sql})
+}
+
+// members0 returns the first member of the list, or the fallback for an empty list.
+func members0(members []Member, fallback Member) Member {
+	if len(members) > 0 {
+		return members[0]
+	}
+	return fallback
 }
 
 func writeError(w http.ResponseWriter, status int, text string) {

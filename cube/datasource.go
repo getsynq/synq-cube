@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"sort"
 	"strings"
@@ -23,7 +24,8 @@ type DataSource struct {
 	Type string
 	// Database is the database of the data source.
 	Database string
-	// Host is the host of the database. For Snowflake it is the account.
+	// Host is the host of the database, with no scheme and no port. For Snowflake it is the
+	// account. Collect removes a scheme and a port.
 	Host string
 	// Project is the BigQuery project.
 	Project string
@@ -227,6 +229,7 @@ func mergeDataSources(lists ...originList) ([]DataSource, map[string]DataSourceO
 			if source.Name == "" {
 				continue
 			}
+			source.Host = hostOnly(source.Host)
 			byName[source.Name] = source
 			origins[source.Name] = list.origin
 		}
@@ -239,6 +242,23 @@ func mergeDataSources(lists ...originList) ([]DataSource, map[string]DataSourceO
 	return out, origins
 }
 
+// hostOnly returns a host with no scheme, no user name, no path and no port:
+// `db.example.com` for `https://db.example.com:5432/analytics`.
+func hostOnly(host string) string {
+	host = strings.TrimSpace(host)
+	if _, rest, found := strings.Cut(host, "://"); found {
+		host = rest
+	}
+	host, _, _ = strings.Cut(host, "/")
+	if at := strings.LastIndex(host, "@"); at >= 0 {
+		host = host[at+1:]
+	}
+	if name, _, err := net.SplitHostPort(host); err == nil {
+		host = name
+	}
+	return strings.Trim(host, "[]")
+}
+
 type originList struct {
 	origin  DataSourceOrigin
 	sources []DataSource
@@ -246,12 +266,10 @@ type originList struct {
 
 // usedDataSources keeps `default` and the data sources that the members use. If no member has
 // a data source, the members do not say what is in use, and each data source stays.
-func usedDataSources(sources []DataSource, members []MemberSQL) []DataSource {
+func usedDataSources(sources []DataSource, snapshot *Snapshot) []DataSource {
 	used := map[string]bool{}
-	for _, member := range members {
-		if member.DataSource != "" {
-			used[member.DataSource] = true
-		}
+	for _, name := range snapshot.UsedDataSources() {
+		used[name] = true
 	}
 	var out []DataSource
 	for _, source := range sources {

@@ -39,13 +39,23 @@ func (s *FilterSuite) client() *cube.Client {
 }
 
 func (s *FilterSuite) names(snapshot *cube.Snapshot) []string {
-	meta, err := cubemeta.Parse(snapshot.Meta)
+	meta, err := cubemeta.Parse(snapshot.DataModel)
 	s.Require().NoError(err)
 	names := make([]string, 0, len(meta.Cubes))
 	for _, c := range meta.Cubes {
 		names = append(names, c.Name)
 	}
 	return names
+}
+
+// requestedMembers returns the count of members in the `/v1/sql` requests. No test of this
+// suite makes Cube return an error, so each member is in one request.
+func (s *FilterSuite) requestedMembers() int {
+	count := 0
+	for _, request := range s.server.SQLRequests() {
+		count += len(request.Members)
+	}
+	return count
 }
 
 // requireOnlyTheDataModelPaths asserts the request paths: one `/v1/meta`, the given count of
@@ -61,7 +71,7 @@ func (s *FilterSuite) requireOnlyTheDataModelPaths(sql int) {
 func (s *FilterSuite) TestNoFilterKeepsTheBytesOfMeta() {
 	snapshot, report, err := cube.Collect(s.T().Context(), s.client(), cube.Options{})
 	s.Require().NoError(err)
-	s.Equal(cubetest.MetaExtended(), snapshot.Meta)
+	s.Equal(cubetest.MetaExtended(), snapshot.DataModel)
 	s.Zero(report.ExcludedCubes + report.ExcludedViews + report.ExcludedMembers)
 	s.Zero(report.HiddenCubes + report.HiddenViews + report.HiddenMembers)
 	s.False(report.MemberSQLSkipped)
@@ -71,7 +81,7 @@ func (s *FilterSuite) TestNoFilterKeepsTheBytesOfMeta() {
 func (s *FilterSuite) TestAFilterThatRemovesNothingKeepsTheBytesOfMeta() {
 	snapshot, _, err := cube.Collect(s.T().Context(), s.client(), cube.Options{Filter: cube.Filter{Include: []string{"*"}, Exclude: []string{"no_such_cube"}}})
 	s.Require().NoError(err)
-	s.Equal(cubetest.MetaExtended(), snapshot.Meta)
+	s.Equal(cubetest.MetaExtended(), snapshot.DataModel)
 }
 
 func (s *FilterSuite) TestExclude() {
@@ -92,12 +102,14 @@ func (s *FilterSuite) TestExclude() {
 	for _, name := range names {
 		s.False(strings.HasPrefix(name, "pg_") || name == "calendar", name)
 	}
-	s.Len(snapshot.MemberSQL, 254-36)
-	for _, member := range snapshot.MemberSQL {
-		s.False(strings.HasPrefix(member.Member, "pg_") || strings.HasPrefix(member.Member, "calendar."), member.Member)
+	members := membersOf(&s.Suite, snapshot)
+	s.Len(members, 254-36)
+	for _, member := range members {
+		s.False(strings.HasPrefix(member, "pg_") || strings.HasPrefix(member, "calendar."), member)
 	}
 	// No SQL request for a member of a cube that was left out.
-	s.requireOnlyTheDataModelPaths(254 - 36)
+	s.requireOnlyTheDataModelPaths(report.SQLRequests)
+	s.Equal(254-36, s.requestedMembers())
 
 	// Two views include members of calendar. They stay, with a warning each.
 	s.Contains(names, "orders_overview")
@@ -117,9 +129,11 @@ func (s *FilterSuite) TestInclude() {
 	s.Equal(3, report.Views)
 	s.Equal(12, report.ExcludedCubes)
 	s.Equal(3, report.ExcludedViews)
-	s.Equal(report.Members, len(snapshot.MemberSQL))
+	s.Len(membersOf(&s.Suite, snapshot), report.Members)
+	s.Equal(report.Members, report.MembersWithSQL)
 	s.Equal(254, report.Members+report.ExcludedMembers)
-	s.requireOnlyTheDataModelPaths(report.Members)
+	s.requireOnlyTheDataModelPaths(report.SQLRequests)
+	s.Equal(report.Members, s.requestedMembers())
 }
 
 func (s *FilterSuite) TestExcludeWinsOverInclude() {
@@ -178,7 +192,7 @@ func (s *FilterSuite) TestSkipHidden() {
 	s.Equal(254-33, report.Members)
 	s.Zero(report.ExcludedCubes)
 
-	meta, err := cubemeta.Parse(snapshot.Meta)
+	meta, err := cubemeta.Parse(snapshot.DataModel)
 	s.Require().NoError(err)
 	s.Len(meta.Cubes, 18)
 	for _, c := range meta.Cubes {
@@ -187,8 +201,9 @@ func (s *FilterSuite) TestSkipHidden() {
 			s.False(member.Hidden(), member.Name)
 		}
 	}
-	s.Len(snapshot.MemberSQL, 254-33)
-	s.requireOnlyTheDataModelPaths(254 - 33)
+	s.Len(membersOf(&s.Suite, snapshot), 254-33)
+	s.requireOnlyTheDataModelPaths(report.SQLRequests)
+	s.Equal(254-33, s.requestedMembers())
 }
 
 func (s *FilterSuite) TestTheLegacyVisibleFlagIsHidden() {
@@ -203,7 +218,7 @@ func (s *FilterSuite) TestTheLegacyVisibleFlagIsHidden() {
 	s.Equal(1, report.HiddenCubes)
 	s.Equal(2, report.HiddenMembers)
 	s.Equal(1, report.Members)
-	s.JSONEq(`{"cubes":[{"name":"orders","type":"cube","measures":[{"name":"orders.count"}]}]}`, string(snapshot.Meta))
+	s.JSONEq(`{"cubes":[{"name":"orders","type":"cube","measures":[{"name":"orders.count"}]}]}`, string(snapshot.DataModel))
 }
 
 func (s *FilterSuite) TestAFilterKeepsThePropertiesItDoesNotKnow() {
@@ -220,8 +235,8 @@ func (s *FilterSuite) TestAFilterKeepsThePropertiesItDoesNotKnow() {
 	// The order of the properties and the bytes of the entries that stay do not change.
 	s.Equal(`{ "futureKey": {"b": 1, "a": [1,2]},
   "cubes": [{"name":"a","type":"cube","future":{"z":1,"y":2},"measures":[]},{"name":"c","type":"view",  "x-unknown": [3, 2, 1] ,"dimensions":[]}],
-  "compilerId": "abc" }`, string(snapshot.Meta))
-	s.True(json.Valid(snapshot.Meta))
+  "compilerId": "abc" }`, string(snapshot.DataModel))
+	s.True(json.Valid(snapshot.DataModel))
 }
 
 func (s *FilterSuite) TestSkipMemberSQL() {
@@ -231,8 +246,10 @@ func (s *FilterSuite) TestSkipMemberSQL() {
 	s.Equal(254, report.Members)
 	s.Zero(report.MemberErrors)
 	s.Empty(report.Warnings)
-	s.Empty(snapshot.MemberSQL)
-	s.Equal(cubetest.MetaExtended(), snapshot.Meta)
+	s.Nil(snapshot.GeneratedSQL)
+	s.Nil(snapshot.MemberErrors)
+	s.Zero(report.SQLRequests)
+	s.Equal(cubetest.MetaExtended(), snapshot.DataModel)
 	s.requireOnlyTheDataModelPaths(0)
 }
 

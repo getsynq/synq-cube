@@ -19,8 +19,10 @@ import (
 //
 // Collect applies the filter of its Options while it reads Cube. Apply applies a filter to a
 // snapshot that exists, for example one that was read from a file. The two give the same
-// snapshot, but for DataSources: Collect keeps the data sources that the members of its
-// snapshot use, and Apply keeps the list as it is.
+// snapshot, but for two things. DataSources: Collect keeps the data sources that the members
+// of its snapshot use, and Apply keeps the list as it is. The SQL text of an entry of GeneratedSQL:
+// Collect asks Cube only for the members that stay, and Apply keeps the text of an entry from
+// which it removed a member.
 type Filter struct {
 	// Include holds glob patterns (the syntax of path.Match, case sensitive) for the names of
 	// the cubes and the views that the snapshot holds. Empty means all of them.
@@ -99,11 +101,13 @@ func (f Filter) IsZero() bool {
 // Apply returns the snapshot without the parts that the filter leaves out. It does not change
 // its input. The result can share the byte slices of the input that the filter did not change.
 //
-// Apply removes the cubes, the views and the members from Meta, and the entries of MemberSQL
-// that belong to them. It does not decode Meta into typed structs: each property that stays
-// keeps its bytes. If the filter removes nothing, Meta is the Meta of the input.
+// Apply removes the cubes, the views and the members from DataModel. It removes those members
+// from each entry of GeneratedSQL, each entry with no member left, and the entries of
+// MemberErrors of those members. The SQL text of an entry stays as it is. It does not decode
+// DataModel into typed structs: each property that stays keeps its bytes. If the filter removes
+// nothing, DataModel is the DataModel of the input.
 //
-// Apply returns an error if a pattern is not valid, if Meta is not a data model, or if the
+// Apply returns an error if a pattern is not valid, if DataModel is not a data model, or if the
 // filter leaves no cube and no view (ErrNothingLeft).
 func (f Filter) Apply(snapshot *Snapshot) (*Snapshot, *FilterReport, error) {
 	if err := f.Validate(); err != nil {
@@ -117,21 +121,26 @@ func (f Filter) Apply(snapshot *Snapshot) (*Snapshot, *FilterReport, error) {
 		return nil, nil, err
 	}
 	if removed.any {
-		kept := make([]MemberSQL, 0, len(out.MemberSQL))
-		for _, member := range out.MemberSQL {
+		out.GeneratedSQL = keepGeneratedSQL(out.GeneratedSQL, removed)
+		errors := make([]MemberError, 0, len(out.MemberErrors))
+		for _, member := range out.MemberErrors {
 			if !removed.member(member.Member) {
-				kept = append(kept, member)
+				errors = append(errors, member)
 			}
 		}
-		out.MemberSQL = kept
+		out.MemberErrors = errors
 		report.Warnings = lostLineageWarnings(meta, removed.names)
 	}
 	if f.SkipMemberSQL {
 		report.MemberSQLSkipped = true
-		out.MemberSQL = nil
+		out.GeneratedSQL = nil
+		out.MemberErrors = nil
 	}
-	if len(out.MemberSQL) == 0 {
-		out.MemberSQL = nil
+	if len(out.GeneratedSQL) == 0 {
+		out.GeneratedSQL = nil
+	}
+	if len(out.MemberErrors) == 0 {
+		out.MemberErrors = nil
 	}
 	if out.ModelExport != nil && f.dropsModelExport(removed) {
 		report.ModelExportSkipped = true
@@ -140,10 +149,33 @@ func (f Filter) Apply(snapshot *Snapshot) (*Snapshot, *FilterReport, error) {
 	return &out, report, nil
 }
 
-// applyToMeta filters the Meta of the snapshot in place and fills the counts of the report. It
+// keepGeneratedSQL removes the members that were removed from each entry, and each entry with
+// no member left. The SQL text of an entry stays as it is: it still has the output column of a
+// member that was removed. It does not change its input.
+func keepGeneratedSQL(entries []GeneratedSQL, removed *removedNames) []GeneratedSQL {
+	kept := make([]GeneratedSQL, 0, len(entries))
+	for _, entry := range entries {
+		members := make([]GeneratedSQLMember, 0, len(entry.Members))
+		for _, member := range entry.Members {
+			if !removed.member(member.Member) {
+				members = append(members, member)
+			}
+		}
+		if len(members) == 0 {
+			continue
+		}
+		if len(members) < len(entry.Members) {
+			entry.Members = members
+		}
+		kept = append(kept, entry)
+	}
+	return kept
+}
+
+// applyToMeta filters the DataModel of the snapshot in place and fills the counts of the report. It
 // returns what it removed and the data model that stays.
 func (f Filter) applyToMeta(snapshot *Snapshot, report *FilterReport) (*removedNames, *cubemeta.Meta, error) {
-	meta, err := cubemeta.Parse(snapshot.Meta)
+	meta, err := cubemeta.Parse(snapshot.DataModel)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -151,7 +183,7 @@ func (f Filter) applyToMeta(snapshot *Snapshot, report *FilterReport) (*removedN
 	if !f.filtersNames() {
 		return removed, meta, nil
 	}
-	filtered, err := f.filterMeta(snapshot.Meta, removed, &report.LeftOut)
+	filtered, err := f.filterMeta(snapshot.DataModel, removed, &report.LeftOut)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -161,7 +193,7 @@ func (f Filter) applyToMeta(snapshot *Snapshot, report *FilterReport) (*removedN
 	if len(removed.names) == len(meta.Cubes) {
 		return nil, nil, ErrNothingLeft
 	}
-	snapshot.Meta = filtered
+	snapshot.DataModel = filtered
 	meta, err = cubemeta.Parse(filtered)
 	if err != nil {
 		return nil, nil, err

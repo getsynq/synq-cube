@@ -30,12 +30,14 @@ func (s *UploadSuite) TestExcludeAndIncludeOnACollection() {
 	s.Require().Len(s.service.requests, 1)
 	sent := s.service.requests[0]
 	s.Equal([]string{"pg_products", "pg_catalog", "orders", "pg_customers", "pg_order_items", "pg_orders", "orders_overview"}, s.names(sent))
-	for _, member := range sent.GetMemberSql() {
-		s.True(strings.HasPrefix(member.GetMember(), "pg_") || strings.HasPrefix(member.GetMember(), "orders"), member.GetMember())
+	members := s.sqlMembers(sent)
+	for _, member := range members {
+		s.True(strings.HasPrefix(member, "pg_") || strings.HasPrefix(member, "orders"), member)
 	}
 	// No SQL request for a member of a cube that was left out.
-	s.requireOnlyTheDataModelPaths(len(sent.GetMemberSql()))
-	s.Less(len(sent.GetMemberSql()), 254)
+	s.requireOnlyTheDataModelPaths(len(sent.GetGeneratedSql()))
+	s.Equal(len(members), s.requestedMembers())
+	s.Less(len(members), 254)
 
 	out := s.stdout.String()
 	s.Contains(out, "Cubes: 5\n")
@@ -75,8 +77,9 @@ func (s *UploadSuite) TestSkipHiddenOnACollection() {
 
 	sent := s.service.requests[0]
 	s.Len(s.names(sent), 18)
-	s.Len(sent.GetMemberSql(), 254-33)
-	s.requireOnlyTheDataModelPaths(254 - 33)
+	s.Len(s.sqlMembers(sent), 254-33)
+	s.requireOnlyTheDataModelPaths(len(sent.GetGeneratedSql()))
+	s.Equal(254-33, s.requestedMembers())
 	s.Contains(s.stdout.String(), "Cubes: 13\n")
 	s.Contains(s.stdout.String(), "Left out by --skip-hidden: cubes 1, views 1, members 33\n")
 }
@@ -87,8 +90,9 @@ func (s *UploadSuite) TestSkipMemberSQLOnACollection() {
 	s.Require().NoError(s.run("upload", "--skip-member-sql", "--skip-model-export"))
 
 	sent := s.service.requests[0]
-	s.Equal(cubetest.MetaExtended(), sent.GetMeta())
-	s.Empty(sent.GetMemberSql())
+	s.Equal(cubetest.MetaExtended(), sent.GetDataModel())
+	s.Empty(sent.GetGeneratedSql())
+	s.Empty(sent.GetMemberErrors())
 	s.requireOnlyTheDataModelPaths(0)
 	s.Contains(s.stdout.String(), "Members: 254\n")
 	s.Contains(s.stdout.String(), "Left out by --skip-member-sql: the SQL of each member\n")
