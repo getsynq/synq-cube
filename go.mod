@@ -3,8 +3,8 @@ module github.com/getsynq/synq-cube
 go 1.25.0
 
 require (
-	buf.build/gen/go/getsynq/api/grpc/go v1.6.2-20261125090149-244e8be444bc.1
-	buf.build/gen/go/getsynq/api/protocolbuffers/go v1.36.12-20261125090149-244e8be444bc.2
+	buf.build/gen/go/getsynq/api/grpc/go v1.6.2-20261125172845-f4fe6d4c01a0.1
+	buf.build/gen/go/getsynq/api/protocolbuffers/go v1.36.12-20261125172845-f4fe6d4c01a0.2
 	buf.build/go/protovalidate v1.3.0
 	github.com/getsynq/quality-oauth-go v0.1.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
