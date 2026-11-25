@@ -639,6 +639,7 @@ curl -s -X POST "$CUBE_CLOUD_URL/api/v1/api-keys" \
 - The response holds the key one time, in `token`. Keep it in a secret store.
 - A key with these two permissions gives the full snapshot: the data model, the SQL of the members, the model export and the data sources.
 - To give the key an end date, add `"ttlHours"`.
+- If Coalesce Quality reads the deployment itself (the Cube Cloud option of the integration), add `DeploymentsPublicController.getDeployments` to `allowedEndpoints`. The setup of the integration then shows the deployments of the key as a selection. The uploader does not need this permission.
 
 The token that Cube Cloud creates has the scopes `meta` and `meta-private`. If the deployment refuses the `/v1/sql` requests of that token, the tool prints a warning for each member.
 
