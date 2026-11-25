@@ -32,7 +32,7 @@ go vet ./...
 The package `github.com/getsynq/synq-cube/cube` has two callers: this tool and the Coalesce Quality backend. The two callers send the same snapshot.
 
 - Put each change of what a snapshot holds in `cube/`, never in `cmd/`.
-- Keep the exported API of `cube/` stable: `Client`, `NewClient`, `NewStaticTokenSource`, `NewAPISecretTokenSource`, `NewCloudTokenSource`, `Collect`, `Options`, `Report`, `Snapshot`, `MemberSQL`, `cubemeta` and `cubetest.NewServer`. If you must change a signature, say so in the pull request.
+- Keep the exported API of `cube/` stable: `Client`, `NewClient`, `NewStaticTokenSource`, `NewAPISecretTokenSource`, `NewCloudTokenSource`, `Collect`, `Describe`, `Options`, `Report`, `Snapshot`, `MemberSQL`, `Filter`, `Filter.Apply`, `FilterReport`, `LeftOut`, `ErrNothingLeft`, `cubemeta` and `cubetest.NewServer`. If you must change a signature, say so in the pull request.
 - Do not import `github.com/spf13/cobra` or a package under `internal/` from `cube/`.
 - Do not read environment variables in `cube/`. The caller gives each setting as a parameter.
 - Keep the dependencies of `cube/` small: the standard library, `github.com/golang-jwt/jwt/v5`, `golang.org/x/sync` and, in tests, `github.com/stretchr/testify`.
@@ -45,8 +45,27 @@ The package `github.com/getsynq/synq-cube/cube` has two callers: this tool and t
 - Reason: the backend has its own generated copy of the proto package `synq.ingest.cube.v1`. If one binary holds two Go packages that register the same proto package, the binary panics at start.
 - The job in `.github/workflows/go.yml` fails if `go list -deps -test ./cube/...` shows a proto package.
 - The fields of `cube.Snapshot` and `cube.MemberSQL` mirror the messages `IngestSnapshotRequest` and `MemberSql`. An optional field of the message is an empty value in the struct. The doc comment of each field says what empty means.
-- `quality.NewRequest` in `internal/quality/request.go` is the one place that maps a `cube.Snapshot` to the message. It adds `uploader_version` and `uploader_build_time`.
-- If you add a field to `cube.Snapshot` or `cube.MemberSQL`, add it to `quality.NewRequest` and to `TestNewRequestMapsEachField`. That test fails for a field that has no value in it.
+- `internal/quality/request.go` is the one place that maps a `cube.Snapshot` to the message (`quality.NewRequest`) and back (`quality.NewSnapshot`). `NewRequest` adds `uploader_version` and `uploader_build_time`.
+- If you add a field to `cube.Snapshot` or `cube.MemberSQL`, add it to `quality.NewRequest`, to `quality.NewSnapshot` and to `TestNewRequestMapsEachField`. That test fails for a field that has no value in it.
+
+### The filter
+
+`cube.Filter` leaves parts of the data model out of a snapshot. It has two entries: `Collect` applies `Options.Filter` while it reads Cube, and `Filter.Apply` applies a filter to a snapshot that exists.
+
+- The two entries give the same snapshot. `TestCollectWithAFilterEqualsApplyOnTheWholeSnapshot` asserts it. If you add a setting to `cube.Filter`, add it to the two entries and to that test.
+- `Collect` sends no `/v1/sql` request for a member that the filter leaves out.
+- The filter never decodes `Meta` into typed structs. `rewriteArrays` in `cube/filter.go` writes only the lists that change, from the JSON text of the entries that stay. A property that the tool does not know keeps its bytes.
+- A snapshot is the whole data model for Coalesce Quality: a cube or a view that is not in the snapshot is removed there. Say this in the help text of each setting that removes a cube or a view.
+- Give each new setting a flag and a `CUBE_*` variable in `cmd/upload.go`, a row in the README and a line in the run summary (`printReport`).
+
+### The snapshot file
+
+`--output` writes the protojson form of `IngestSnapshotRequest`, and `--input` reads it. This is the one file format of the tool.
+
+- Read the file with `DiscardUnknown: false`, so a typing error in a file that a person edited is an error.
+- `quality.NewSnapshot` maps the message of a file to a `cube.Snapshot`. The filter and the counts then work on the snapshot, as after a collection.
+- The tool sends its own `uploader_version` and `uploader_build_time`, never the values of the file.
+- With `--input` the tool sends no request to Cube. It refuses the flags that set how it reads Cube (`collectionFlags`). Add a new collection flag to that list.
 
 ## What the tool must never do
 

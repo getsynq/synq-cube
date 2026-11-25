@@ -35,7 +35,7 @@ jq -r .meta snapshot.json | base64 -d | jq .
 jq '.memberSql[] | {member, dataSource, sql, error}' snapshot.json
 ```
 
-A dry run sends nothing to Coalesce Quality and needs no Coalesce Quality token. The file has the same fields as the `IngestSnapshotRequest` message of the [public API](https://buf.build/getsynq/api).
+A dry run sends nothing to Coalesce Quality and needs no Coalesce Quality token. The file is the protojson form of `synq.ingest.cube.v1.IngestSnapshotRequest`, a message of the [public API](https://buf.build/getsynq/api). See [Inspect, edit and send a snapshot file](#inspect-edit-and-send-a-snapshot-file).
 
 ## Before you start
 
@@ -162,6 +162,20 @@ Each setting is an environment variable. The settings that are not secrets have 
 
 Set one credential. If more than one is set, the tool uses the first of them in this order: `CUBE_CLOUD_API_KEY`, `CUBE_API_TOKEN`, `CUBE_API_SECRET`.
 
+### Filters
+
+See [Leave parts of the data model out](#leave-parts-of-the-data-model-out) before you use them.
+
+| Variable | Flag | Meaning |
+|---|---|---|
+| `CUBE_INCLUDE` | `--include <pattern>` | Keep only the cubes and the views with a name that matches the pattern. Set the flag more than once, or separate the patterns in the variable with commas. |
+| `CUBE_EXCLUDE` | `--exclude <pattern>` | Leave out the cubes and the views with a name that matches the pattern. It wins over `--include`. |
+| `CUBE_SKIP_HIDDEN` | `--skip-hidden` | Leave out the cubes, the views and the members that are not public |
+| `CUBE_SKIP_MEMBER_SQL` | `--skip-member-sql` | Send no `/v1/sql` request. The snapshot has no SQL of the members. |
+| `CUBE_SKIP_MODEL_EXPORT` | `--skip-model-export` | Send no model export request to Cube Cloud |
+
+The three `CUBE_SKIP_*` variables take `true` or `false`.
+
 ### Coalesce Quality
 
 | Variable | Flag | Meaning |
@@ -175,7 +189,74 @@ Set one credential. If more than one is set, the tool uses the first of them in 
 | Flag | Meaning |
 |---|---|
 | `--output <file>` | Write the snapshot to the file as JSON |
-| `--dry-run` | Send nothing to Coalesce Quality. Use it with `--output`. |
+| `--input <file>` | Send the snapshot of the file and send no request to Cube. `-` is the standard input. |
+| `--dry-run` | Send nothing to Coalesce Quality. Use it with `--output`, or with `--input` to check a file. |
+
+## Inspect, edit and send a snapshot file
+
+A snapshot file is the protojson form of `synq.ingest.cube.v1.IngestSnapshotRequest`. It holds all that the tool sends. Use it to look at a snapshot, to keep one, or to send one at a later time.
+
+```bash
+# 1. Write the snapshot to a file and send nothing
+synq-cube upload --dry-run --output snapshot.json
+
+# 2. Look at it
+jq -r .meta snapshot.json | base64 -d | jq '.cubes[].name'
+jq '.memberSql[] | {member, dataSource, sql, error}' snapshot.json
+
+# 3. Send it
+synq-cube upload --input snapshot.json
+```
+
+- With `--input` the tool sends no request to Cube and needs no `CUBE_*` credential. It needs `QUALITY_TOKEN`.
+- The tool refuses the flags that set how it reads Cube (`--cube-api-url`, `--concurrency` and the others), as it does not read Cube.
+- The tool refuses a file with a field that the message does not have, a file with no `meta`, a `meta` that is not JSON with a `cubes` list, and a file with no `collectedAt`. So a typing error in a file that you edited is an error, not a silent change.
+- The tool prints the same counts as after a collection, counted from the file.
+- The tool sends its own `uploaderVersion` and `uploaderBuildTime`, not the values of the file.
+- `--input` with `--dry-run` only checks the file and prints the counts.
+- `--input` with `--output` writes the file again in the format of the tool.
+- `meta` and `modelExport` are JSON texts in base64, as protojson writes bytes. To change one, decode it, change it and encode it again.
+
+The file can hold the SQL of your data model, with table names, column names and literal values. Treat it like source code.
+
+## Leave parts of the data model out
+
+Five settings leave parts of the data model out of the snapshot. They work on a collection and on a snapshot file, and the result is the same.
+
+```bash
+# On a collection: the tool sends no /v1/sql request for a member that is left out
+synq-cube upload --exclude 'tmp_*' --exclude 'scratch_*' --skip-hidden
+
+# On a file: cut it down, look at the result, then send it
+synq-cube upload --input snapshot.json --exclude 'tmp_*' --dry-run --output smaller.json
+synq-cube upload --input smaller.json
+```
+
+**A snapshot is the whole data model for Coalesce Quality. A cube or a view that is not in the snapshot is removed from Coalesce Quality.** A filter is not a way to update a part of the data model. Use the same filter on each run.
+
+| Setting | What is left out | The price |
+|---|---|---|
+| `--include`, `--exclude` | The cubes and the views that the patterns do not keep, with their members | Coalesce Quality does not show them. |
+| `--skip-hidden` | The cubes and the views with `public: false` (or the older `isVisible: false`), and the members of the other cubes and views that are not public | Coalesce Quality does not show them. |
+| `--skip-member-sql` | The SQL of each member | No lineage to the warehouse tables, and no data source for each cube |
+| `--skip-model-export` | The Cube Cloud model export | The snapshot has only what the REST API returns. |
+
+- A pattern is a glob on the name of a cube or a view: `*` is each sequence of characters, `?` is one character, `[abc]` is one character of a set. The match is on the whole name and is case sensitive, as the names in Cube are. `orders*` matches `orders` and `orders_overview`, and it does not match `pg_orders`.
+- A name stays if it matches an `--include` pattern, or if there is no `--include` pattern, and if it matches no `--exclude` pattern.
+- A pattern that is not valid stops the tool before it sends a request.
+- The cube or the view is removed from the `meta` of the snapshot. The other properties of `meta` keep their text, also the properties that the tool does not know.
+- A view that includes members of a cube that is left out stays in the snapshot. It has no lineage through that cube. The tool prints one warning for each such view and cube. Many projects keep the cubes hidden and show only the views, so with `--skip-hidden` the views of such a project have no lineage through their cubes.
+- The model export cannot be filtered. If a filter removes a cube, a view or a member, the snapshot has no model export, and the tool says so.
+- If the filters leave no cube and no view, the tool stops with an error and sends nothing.
+- The tool prints how many cubes, views and members each setting left out:
+
+```text
+Cubes: 9
+Views: 5
+Members: 218
+Members with an error: 0
+Left out by --include and --exclude: cubes 5, views 1, members 36
+```
 
 ## The Cube token
 
