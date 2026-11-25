@@ -1,0 +1,113 @@
+# GoReleaser configuration for synq-cube
+# https://goreleaser.com/
+version: 2
+
+project_name: synq-cube
+
+before:
+  hooks:
+    # The shell completions go into every archive. Cobra renders them from the command tree, so
+    # one host build serves every target. sh -c because GoReleaser runs hooks without a shell.
+    - sh -c 'mkdir -p .completions && go run . completion zsh > .completions/_synq-cube'
+    - sh -c 'go run . completion bash > .completions/synq-cube.bash'
+    # Anything that the root command writes to stdout ends up in these files, and a broken
+    # completion shows only when a shell loads it. So assert each file against its own output.
+    - sh -c 'grep -q "^#compdef synq-cube$" .completions/_synq-cube'
+    - sh -c 'grep -q "^# bash completion V2 for synq-cube" .completions/synq-cube.bash'
+
+builds:
+  - id: synq-cube
+    binary: synq-cube
+    main: .
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    # internal/buildinfo is the only home of these stamps. `--version` and the uploader fields
+    # of a snapshot read them. Do not add a tool-local stamp beside it.
+    ldflags:
+      - -s -w
+      - -X github.com/getsynq/synq-cube/internal/buildinfo.BuildVersion={{.Version}}
+      - -X github.com/getsynq/synq-cube/internal/buildinfo.BuildCommit={{.FullCommit}}
+      - -X github.com/getsynq/synq-cube/internal/buildinfo.BuildTime={{.Date}}
+
+archives:
+  - id: default
+    ids:
+      - synq-cube
+    name_template: "synq-cube_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE
+      - src: .completions/_synq-cube
+        dst: completions/_synq-cube
+      - src: .completions/synq-cube.bash
+        dst: completions/synq-cube.bash
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+# The release goes to this repository. The tool has no Homebrew cask: it runs in a container or in a
+# CI job beside Cube, not on a workstation.
+release:
+  github:
+    owner: getsynq
+    name: synq-cube
+  draft: false
+  prerelease: auto
+  mode: replace
+  name_template: "synq-cube {{ .Tag }}"
+  header: |
+    ## What's Changed
+
+    Full Changelog: https://github.com/getsynq/synq-cube/compare/{{ .PreviousTag }}...{{ .Tag }}
+  footer: |
+    ## Installation
+
+    ### Docker
+    ```bash
+    docker pull ghcr.io/getsynq/synq-cube:{{ .Tag }}
+    ```
+
+    ### Linux
+    ```bash
+    # AMD64
+    curl -L https://github.com/getsynq/synq-cube/releases/download/{{ .Tag }}/synq-cube_{{ .Version }}_linux_amd64.tar.gz | tar -xz
+    sudo mv synq-cube /usr/local/bin/
+
+    # ARM64
+    curl -L https://github.com/getsynq/synq-cube/releases/download/{{ .Tag }}/synq-cube_{{ .Version }}_linux_arm64.tar.gz | tar -xz
+    sudo mv synq-cube /usr/local/bin/
+    ```
+
+    ### macOS
+    ```bash
+    # Apple Silicon
+    curl -L https://github.com/getsynq/synq-cube/releases/download/{{ .Tag }}/synq-cube_{{ .Version }}_darwin_arm64.tar.gz | tar -xz
+    sudo mv synq-cube /usr/local/bin/
+
+    # Intel
+    curl -L https://github.com/getsynq/synq-cube/releases/download/{{ .Tag }}/synq-cube_{{ .Version }}_darwin_amd64.tar.gz | tar -xz
+    sudo mv synq-cube /usr/local/bin/
+    ```
+
+    ### Windows
+    Download `synq-cube_{{ .Version }}_windows_amd64.zip` (or `_arm64`) and extract `synq-cube.exe` to a directory on your PATH.

@@ -1,0 +1,58 @@
+name: Go
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Format
+        run: |
+          unformatted=$(gofmt -l .)
+          if [[ -n $unformatted ]]; then
+            echo "::error::gofmt must change these files:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      # The Coalesce Quality backend imports ./cube and has its own generated copy of the proto
+      # package synq.ingest.cube.v1. Two Go packages that register one proto package in one
+      # binary panic at start. So the collector imports no generated proto package and no
+      # protobuf or gRPC runtime. The test dependencies count too.
+      - name: The collector imports no proto package
+        run: |
+          set -euo pipefail
+          found=$(go list -deps -test ./cube/... \
+            | grep -E '^(buf\.build/|github\.com/getsynq/api|google\.golang\.org/(protobuf|grpc|genproto))' || true)
+          if [[ -n $found ]]; then
+            echo "::error::./cube must not import these packages:"
+            echo "$found"
+            exit 1
+          fi
+
+      - name: Build
+        run: |
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
+            echo "Build ${target}"
+            GOOS=${target%/*} GOARCH=${target#*/} CGO_ENABLED=0 go build -o /dev/null .
+          done
+
+      - name: Test
+        run: go test ./...
