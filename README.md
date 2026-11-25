@@ -15,11 +15,16 @@ The tool is open source (Apache 2.0), so you can check what it reads and what it
 | Request | Content |
 |---|---|
 | `GET /v1/meta?extended` | The compiled data model: the cubes and the views with their measures, dimensions, segments, joins, hierarchies, folders and pre-aggregations |
-| `GET /v1/sql` | The SQL that Cube generates for one measure or one dimension. The tool sends one request for each measure and each dimension. |
+| `POST /v1/sql` | The SQL that Cube generates for many members. The tool sends one request for the measures and one request for the dimensions of each cube and each view. |
+| `GET /v1/sql` | The SQL that Cube generates for one measure or one dimension |
+
+See [How the tool reads the SQL](#how-the-tool-reads-the-sql).
 
 With Cube Cloud credentials, the tool also sends `POST /v1/model-export` and `GET /v1/data-sources` to the Cube Cloud Metadata API. If one of these requests fails, the tool prints a warning and sends the snapshot without its response.
 
 The tool also reads five kinds of variable from its own environment that say what a data source of Cube is, for example `CUBEJS_DB_TYPE`. See [How Coalesce Quality finds the warehouse of a data source](#how-coalesce-quality-finds-the-warehouse-of-a-data-source).
+
+The tool reads the URL, the branch and the commit of the git repository of the data model. See [The git repository of the data model](#the-git-repository-of-the-data-model).
 
 - Cube compiles the SQL for `/v1/sql` and does not run it. No query reaches the warehouse.
 - The tool never requests `/v1/load`. No data rows leave your network.
@@ -32,9 +37,11 @@ To see what leaves your network before you send it, use a dry run:
 synq-cube upload --dry-run --output snapshot.json
 
 # The data model, as Cube returned it
-jq -r .meta snapshot.json | base64 -d | jq .
-# The SQL of each member
-jq '.memberSql[] | {member, dataSource, sql, error}' snapshot.json
+jq -r .dataModel snapshot.json | base64 -d | jq .
+# Each SQL statement, with its members
+jq '.generatedSql[] | {members: [.members[].member], dataSource, sql}' snapshot.json
+# The members for which Cube generated no SQL
+jq '.memberErrors' snapshot.json
 ```
 
 A dry run sends nothing to Coalesce Quality and needs no Coalesce Quality token. The file is the protojson form of `synq.ingest.cube.v1.IngestSnapshotRequest`, a message of the [public API](https://buf.build/getsynq/api). See [Inspect, edit and send a snapshot file](#inspect-edit-and-send-a-snapshot-file).
@@ -118,7 +125,10 @@ Reading the data model from https://cube.example.com/cubejs-api
 Cubes: 14
 Views: 6
 Members: 254
+Members with SQL: 254, in 39 SQL statements
 Members with an error: 0
+Requests to /v1/sql: 39
+Git repository: https://github.com/example/analytics, branch main, commit 0123abc (from the variables of GitHub Actions)
 Sent the snapshot to Coalesce Quality, eu (developer.synq.io:443)
 ```
 
@@ -160,6 +170,7 @@ Each setting is an environment variable. The settings that are not secrets have 
 | `CUBE_CLOUD_DEPLOYMENT_ID` | `--cube-cloud-deployment-id` | The id of the deployment, the number in the URL of the deployment in Cube Cloud |
 | `CUBE_CLOUD_ENVIRONMENT_ID` | `--cube-cloud-environment-id` | The id of the environment. The default is the production environment. |
 | | `--concurrency` | How many `/v1/sql` requests run at the same time. The default is 4. |
+| `CUBE_BATCH_SIZE` | `--batch-size` | The largest count of members in one `/v1/sql` request. The default is 200. With 1, the tool sends one request for each member. |
 | | `--request-timeout` | The time limit of one request to Cube. The default is `1m`. |
 
 Set one credential. If more than one is set, the tool uses the first of them in this order: `CUBE_CLOUD_API_KEY`, `CUBE_API_TOKEN`, `CUBE_API_SECRET`.
@@ -172,6 +183,18 @@ See [How Coalesce Quality finds the warehouse of a data source](#how-coalesce-qu
 |---|---|---|
 | `CUBE_DATA_SOURCES` | `--data-source <text>` | What a data source is, as `name=type[,database=..][,host=..][,project=..]`. Set the flag more than once, or separate the entries in the variable with semicolons. |
 | `CUBE_NO_DATA_SOURCES_FROM_ENV` | `--no-data-sources-from-env` | Do not read the `CUBEJS_DB_*` and `CUBEJS_DS_*` variables of Cube. The variable takes `true` or `false`. |
+
+### Git repository
+
+See [The git repository of the data model](#the-git-repository-of-the-data-model).
+
+| Variable | Flag | Meaning |
+|---|---|---|
+| `CUBE_GIT_URL` | `--git-url` | The URL of the git repository that holds the files of the data model, for example `https://github.com/example/analytics` |
+| `CUBE_GIT_BRANCH` | `--git-branch` | The branch of the data model |
+| `CUBE_GIT_COMMIT` | `--git-commit` | The commit of the data model |
+| `CUBE_MODEL_PATH` | `--model-path` | The path of the directory of the data model in the repository. The default is `model`, if the git checkout has that directory. |
+| `CUBE_NO_GIT_CONTEXT` | `--no-git-context` | Do not read the git repository from the variables of a CI system and from the git checkout. The variable takes `true` or `false`. |
 
 ### Filters
 
@@ -203,6 +226,46 @@ The three `CUBE_SKIP_*` variables take `true` or `false`.
 | `--input <file>` | Send the snapshot of the file and send no request to Cube. `-` is the standard input. |
 | `--dry-run` | Send nothing to Coalesce Quality. Use it with `--output`, or with `--input` to check a file. |
 
+## How the tool reads the SQL
+
+Cube generates the SQL of a query of many members in one statement. The statement has one output column for each member. So the tool does not send one request for each member.
+
+1. For each cube and each view, the tool sends one `POST /v1/sql` request for all its measures and one for all its dimensions. The query has `"ungrouped": true`, so Cube reads the tables of the cube and not a pre-aggregation table.
+2. A request holds 200 members at most. The tool splits a longer list. Change the limit with `--batch-size`.
+3. If Cube returns an error for a request, one member or more breaks the query. The tool splits the members in two halves and sends one request for each half, down to one member. This finds the members that break the query. Each list that Cube answers is one SQL statement of the snapshot.
+4. The tool sends the members that it found in step 3 in a query without `ungrouped`, and splits that list in the same way. Some measures have SQL only in a query without `ungrouped`.
+5. A member that fails alone in step 4 has no SQL. The snapshot holds it in `memberErrors` with the error text of Cube, and the tool prints one warning.
+
+- One member for which Cube generates no SQL does not stop the SQL of the other members.
+- A member gets a query without `ungrouped` only if its ungrouped query failed when it was alone.
+- `--concurrency` is the count of requests that run at the same time. Cube generates SQL in one process, so a larger value gives little.
+- `--batch-size 1` is the old behaviour: one `GET /v1/sql` request for each measure and each dimension, and one SQL statement for each member. Use it if you must compare the SQL of one member with the SQL in the Cube Playground. It is much slower on a large data model.
+- A query of one member is a `GET` request with the query in the URL. A query of many members is a `POST` request with the query in the body, as a URL has a length limit: Cube refuses a URL of more than about 16,000 characters. If your Cube answers `POST /v1/sql` with status 404 or 405, the tool sends the queries of many members in `GET` requests, and splits a list that is too long for the URL.
+- The response of Cube says which output column is which member (`aliasNameToMember`). The tool copies the name of the column from the response. It never builds the name from the name of the member, as a cube with `sql_alias` has another prefix. If the response does not name the output column of a member, the tool sends one request for that member alone. If that response does not name the column, the member has no SQL: it is in `memberErrors`, with a text that says so.
+- A segment is a filter and has no output column. The tool sends no query for a segment.
+- The time of a snapshot (`collectedAt`) is the time at which the tool started, before its first request to Cube.
+- The tool prints the count of `/v1/sql` requests that it sent.
+
+## The git repository of the data model
+
+The snapshot can name the git repository that holds the files of the data model: the URL, the branch and the commit, and the path of the directory of the data model. Coalesce Quality then links each cube and each view to its file in the repository.
+
+The tool takes the repository from the first of these places that names one:
+
+1. **The settings**: `--git-url`, `--git-branch`, `--git-commit` (or `CUBE_GIT_URL`, `CUBE_GIT_BRANCH`, `CUBE_GIT_COMMIT`).
+2. **GitHub Actions**: the variables `GITHUB_SERVER_URL` and `GITHUB_REPOSITORY`, `GITHUB_HEAD_REF` or `GITHUB_REF_NAME`, and `GITHUB_SHA`.
+3. **GitLab CI**: the variables `CI_PROJECT_URL`, `CI_COMMIT_REF_NAME` and `CI_COMMIT_SHA`.
+4. **The git checkout** of the working directory. The tool runs the `git` binary and reads the URL of the remote `origin`, the branch and the commit. If there is no `git` binary or no checkout, this place gives nothing, and the tool prints no error.
+
+- The tool never sends a user name or a password of a URL. It removes them: `https://user:token@github.com/example/analytics` becomes `https://github.com/example/analytics`. The short SSH form `git@github.com:example/analytics.git` stays as it is.
+- With `--git-url`, the branch and the commit come only from the settings. Without `--git-url`, `--git-branch` and `--git-commit` replace the value of the place that names the repository.
+- `--model-path` is the directory of the data model, from the root of the repository, with `/` between the parts. The file name of a cube in the data model is relative to it. For the root of the repository, set `--model-path .`. If you do not set it and the git checkout has a directory `model`, the tool sends `model`. Else the tool sends no path: the directory is not known.
+- The tool prints the repository that it sends, with the place that it came from.
+- To send no repository, set `--no-git-context` and no `--git-url`.
+- If the snapshot names no repository, you can name the repository in the settings of the Cube integration in Coalesce Quality.
+- If you run the tool in a checkout of another repository, for example a repository of deploy scripts, set `--git-url` or `--no-git-context`. If you do not, the tool sends that repository.
+- With `--input` the tool sends the repository of the file. It does not read the variables of a CI system and the checkout. A `--git-*` or `--model-path` setting replaces the value of the file.
+
 ## How Coalesce Quality finds the warehouse of a data source
 
 Each cube reads one data source of Cube, for example `default`. For the lineage to the warehouse tables, Coalesce Quality must know which of your warehouse integrations a data source is. The snapshot says what each data source is: the name, the database type, and the database, the host or the project. Coalesce Quality compares that with your warehouse integrations.
@@ -217,7 +280,7 @@ The tool takes the description of a data source from three places. If two places
      --data-source 'events=bigquery,project=example-project'
    ```
 
-   The type is the database type as Cube spells it in `CUBEJS_DB_TYPE` (`snowflake`, `bigquery`, `postgres`, `redshift`, `clickhouse`). For Snowflake, `host` is the account.
+   The type is the database type as Cube spells it in `CUBEJS_DB_TYPE` (`snowflake`, `bigquery`, `postgres`, `redshift`, `clickhouse`). For Snowflake, `host` is the account. The snapshot holds the host with no scheme and no port: the tool removes them.
 
 2. **Cube Cloud.** With Cube Cloud credentials this is automatic: the tool reads the data sources from Cube Cloud. Cube Cloud lists only the data sources that connect.
 
@@ -264,8 +327,9 @@ A snapshot file is the protojson form of `synq.ingest.cube.v1.IngestSnapshotRequ
 synq-cube upload --dry-run --output snapshot.json
 
 # 2. Look at it
-jq -r .meta snapshot.json | base64 -d | jq '.cubes[].name'
-jq '.memberSql[] | {member, dataSource, sql, error}' snapshot.json
+jq -r .dataModel snapshot.json | base64 -d | jq '.cubes[].name'
+jq '.generatedSql[] | {members: [.members[].member], dataSource, sql}' snapshot.json
+jq '.memberErrors' snapshot.json
 
 # 3. Send it
 synq-cube upload --input snapshot.json
@@ -273,12 +337,14 @@ synq-cube upload --input snapshot.json
 
 - With `--input` the tool sends no request to Cube and needs no `CUBE_*` credential. It needs `QUALITY_TOKEN`.
 - The tool refuses the flags that set how it reads Cube (`--cube-api-url`, `--concurrency` and the others), as it does not read Cube.
-- The tool refuses a file with a field that the message does not have, a file with no `meta`, a `meta` that is not JSON with a `cubes` list, and a file with no `collectedAt`. So a typing error in a file that you edited is an error, not a silent change.
+- The tool refuses a file with a field that the message does not have, a file with no `dataModel`, a `dataModel` that is not JSON with a `cubes` list, an entry of `generatedSql` with no `sql`, no member or no `column` of a member, and a file with no `collectedAt`. So a typing error in a file that you edited is an error, not a silent change.
+- The file has two lists for the SQL. `generatedSql` holds the SQL statements. Each statement has its `members`, and each member has the `column` of the statement that holds its value. `memberErrors` holds the members with no SQL, each with the reason. A member is in one of the two lists, one time.
+- The file never has an optional field with an empty text.
 - The tool prints the same counts as after a collection, counted from the file.
 - The tool sends its own `uploaderVersion` and `uploaderBuildTime`, not the values of the file.
 - `--input` with `--dry-run` only checks the file and prints the counts.
 - `--input` with `--output` writes the file again in the format of the tool.
-- `meta` and `modelExport` are JSON texts in base64, as protojson writes bytes. To change one, decode it, change it and encode it again.
+- `dataModel` and `modelExport` are JSON texts in base64, as protojson writes bytes. To change one, decode it, change it and encode it again.
 
 The file can hold the SQL of your data model, with table names, column names and literal values. Treat it like source code.
 
@@ -301,13 +367,14 @@ synq-cube upload --input smaller.json
 |---|---|---|
 | `--include`, `--exclude` | The cubes and the views that the patterns do not keep, with their members | Coalesce Quality does not show them. |
 | `--skip-hidden` | The cubes and the views with `public: false` (or the older `isVisible: false`), and the members of the other cubes and views that are not public | Coalesce Quality does not show them. |
-| `--skip-member-sql` | The SQL of each member | No lineage to the warehouse tables, and no data source for each cube |
+| `--skip-member-sql` | The SQL of each member, and the members with an error | No lineage to the warehouse tables, and no data source for each cube |
 | `--skip-model-export` | The Cube Cloud model export | The snapshot has only what the REST API returns. |
 
 - A pattern is a glob on the name of a cube or a view: `*` is each sequence of characters, `?` is one character, `[abc]` is one character of a set. The match is on the whole name and is case sensitive, as the names in Cube are. `orders*` matches `orders` and `orders_overview`, and it does not match `pg_orders`.
 - A name stays if it matches an `--include` pattern, or if there is no `--include` pattern, and if it matches no `--exclude` pattern.
 - A pattern that is not valid stops the tool before it sends a request.
-- The cube or the view is removed from the `meta` of the snapshot. The other properties of `meta` keep their text, also the properties that the tool does not know.
+- The cube or the view is removed from the `dataModel` of the snapshot. The other properties of `dataModel` keep their text, also the properties that the tool does not know.
+- On a file, a filter removes the members that it leaves out from each SQL statement, and it removes a statement with no member left. The SQL text of a statement does not change: it still has the output column of a member that was removed. On a collection, the tool asks Cube only for the members that stay.
 - A view that includes members of a cube that is left out stays in the snapshot. It has no lineage through that cube. The tool prints one warning for each such view and cube. Many projects keep the cubes hidden and show only the views, so with `--skip-hidden` the views of such a project have no lineage through their cubes.
 - The model export cannot be filtered. If a filter removes a cube, a view or a member, the snapshot has no model export, and the tool says so.
 - If the filters leave no cube and no view, the tool stops with an error and sends nothing.
@@ -317,7 +384,9 @@ synq-cube upload --input smaller.json
 Cubes: 9
 Views: 5
 Members: 218
+Members with SQL: 218, in 27 SQL statements
 Members with an error: 0
+Requests to /v1/sql: 27
 Left out by --include and --exclude: cubes 5, views 1, members 36
 ```
 
@@ -441,4 +510,5 @@ You can also use `CUBE_API_URL` with `CUBE_API_SECRET` or `CUBE_API_TOKEN` on Cu
 | `cannot read the data model: ... HTTP 403` | Cube refused the token. Check the API secret, the security context and the `meta` scope. |
 | `cannot read the data model: ... HTTP 404` | `CUBE_API_URL` does not have the base path. The default base path of Cube is `/cubejs-api`. |
 | `warning: <member>: Cube generated no SQL: ...` | Cube returned an error for the member. The text after the colon is the error of Cube. Run the same member in the Cube Playground to see it. |
+| `warning: <member>: ... has no entry for the member in aliasNameToMember ...` | The response of Cube did not say which output column is the member. This version of Cube is too old for the tool, or a proxy changed the response. |
 | `cannot get an access token for Coalesce Quality` | `QUALITY_TOKEN` is not the token of a Cube integration, or the region is not the region of the workspace. |

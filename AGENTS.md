@@ -13,6 +13,7 @@ This repository is public. Customers read the source to audit the tool, and they
 | `cube/cubemeta/` | The reader of the `/v1/meta` response |
 | `cube/cubetest/` | A test server that replays a recorded Cube deployment |
 | `internal/quality/` | The upload client for the Coalesce Quality API |
+| `internal/gitcontext/` | The reader of the git repository: the variables of a CI system and the git checkout |
 | `internal/buildinfo/` | The build stamps |
 | `internal/region/` | The `--region` and `--endpoint` flags |
 
@@ -32,7 +33,7 @@ go vet ./...
 The package `github.com/getsynq/synq-cube/cube` has two callers: this tool and the Coalesce Quality backend. The two callers send the same snapshot.
 
 - Put each change of what a snapshot holds in `cube/`, never in `cmd/`.
-- Keep the exported API of `cube/` stable: `Client`, `NewClient`, `NewStaticTokenSource`, `NewAPISecretTokenSource`, `NewCloudTokenSource`, `Collect`, `Describe`, `Options`, `Report`, `Snapshot`, `MemberSQL`, `DataSource`, `DataSourcesFromEnv`, `ParseDataSource`, `Filter`, `Filter.Apply`, `FilterReport`, `LeftOut`, `ErrNothingLeft`, `cubemeta` and `cubetest.NewServer`. If you must change a signature, say so in the pull request.
+- Keep the exported API of `cube/` stable: `Client`, `NewClient`, `NewStaticTokenSource`, `NewAPISecretTokenSource`, `NewCloudTokenSource`, `Collect`, `Describe`, `Options`, `Report`, `Snapshot`, `GeneratedSQL`, `GeneratedSQLMember`, `MemberError`, `GitContext`, `DataSource`, `DataSourcesFromEnv`, `ParseDataSource`, `Filter`, `Filter.Apply`, `FilterReport`, `LeftOut`, `ErrNothingLeft`, `cubemeta` and `cubetest.NewServer`. If you must change a signature, say so in the pull request.
 - Do not import `github.com/spf13/cobra` or a package under `internal/` from `cube/`.
 - Do not read environment variables in `cube/`. The caller gives each setting as a parameter.
 - Keep the dependencies of `cube/` small: the standard library, `github.com/golang-jwt/jwt/v5`, `golang.org/x/sync` and, in tests, `github.com/stretchr/testify`.
@@ -44,17 +45,34 @@ The package `github.com/getsynq/synq-cube/cube` has two callers: this tool and t
 - Do not import a generated proto package in `cube/`, `cube/cubemeta/` or `cube/cubetest/`, also not in a test. Do not import `google.golang.org/protobuf` or `google.golang.org/grpc` there.
 - Reason: the backend has its own generated copy of the proto package `synq.ingest.cube.v1`. If one binary holds two Go packages that register the same proto package, the binary panics at start.
 - The job in `.github/workflows/go.yml` fails if `go list -deps -test ./cube/...` shows a proto package.
-- The fields of `cube.Snapshot` and `cube.MemberSQL` mirror the messages `IngestSnapshotRequest` and `MemberSql`. An optional field of the message is an empty value in the struct. The doc comment of each field says what empty means.
+- The fields of `cube.Snapshot`, `cube.GeneratedSQL`, `cube.MemberError` and `cube.GitContext` mirror the messages `IngestSnapshotRequest`, `GeneratedSql`, `MemberError` and `GitContext`. An optional field of the message is an empty value in the struct. The doc comment of each field says what empty means.
 - `internal/quality/request.go` is the one place that maps a `cube.Snapshot` to the message (`quality.NewRequest`) and back (`quality.NewSnapshot`). `NewRequest` adds `uploader_version` and `uploader_build_time`.
-- If you add a field to `cube.Snapshot` or `cube.MemberSQL`, add it to `quality.NewRequest`, to `quality.NewSnapshot` and to `TestNewRequestMapsEachField`. That test fails for a field that has no value in it.
+- If you add a field to `cube.Snapshot` or to a struct in it, add it to `quality.NewRequest`, to `quality.NewSnapshot` and to `TestNewRequestMapsEachField`. That test fails for a field that has no value in it.
+- The comments and the `buf.validate` rules of the proto file are the contract. `quality.NewRequest` sets no optional field to an empty value, always sets `ungrouped`, gives each member error a text, and writes the build time in RFC 3339 format or not at all. `TestACollectedSnapshotIsAValidMessage` validates the message of a collected snapshot with `buf.build/go/protovalidate`. If you change the collector or the mapping, keep that test green.
+
+### The SQL of the members
+
+`Collect` asks Cube for the SQL of many members in one `/v1/sql` request. The code is in `cube/batch.go`. The README says the steps in § How the tool reads the SQL.
+
+- One batch holds the measures, or the dimensions, of one cube or of one view, and `Options.BatchSize` members at most. One entry of `Snapshot.GeneratedSQL` is the SQL of one request.
+- A member is in one entry of `Snapshot.GeneratedSQL` or in `Snapshot.MemberErrors`, never in the two and never in two entries.
+- Each member of an entry has its `Column`: the key of the member in `sql.aliasNameToMember` of the response, as Cube sent it. Do not build the column from the name of the member: a cube with `sql_alias` has another prefix. A member that has no column in a statement of many members is collected alone. If that response names no column, the member goes to `MemberErrors` (`errNoColumn`).
+- `Snapshot.CollectedAt` is the time before the first request to Cube.
+- Do not send a query of many members without `ungrouped` for a member whose ungrouped query did not fail when it was alone. A grouped query can read a pre-aggregation table, and then the member has no lineage to the tables of its cube.
+- A member is alone in two requests at most: one ungrouped and one without `ungrouped`. Keep the count of requests low: Cube generates SQL in one process.
+- `BatchSize: 1` gives one `GET /v1/sql` request for each member. `TestBatchSizeOneSendsOneRequestForEachMember` asserts it.
+- A query of many members is a `POST /v1/sql` request (`Client.SQLOfMembers`), as a URL has a length limit. A query of one member is a `GET /v1/sql` request (`Client.SQL`).
+- `cubetest.Server` answers a query of many members. Use `ErrorMembers`, `GroupedOnlyMembers`, `NoAliasMembers`, `NoAliases`, `NoPostSQL` and `MaxURLLength` to test a failure, and `SQLRequests` to assert the requests.
+- `Report.SQLRequests` counts each `/v1/sql` request, with the requests that the client sent again.
 
 ### The filter
 
 `cube.Filter` leaves parts of the data model out of a snapshot. It has two entries: `Collect` applies `Options.Filter` while it reads Cube, and `Filter.Apply` applies a filter to a snapshot that exists.
 
-- The two entries give the same snapshot. `TestCollectWithAFilterEqualsApplyOnTheWholeSnapshot` asserts it. If you add a setting to `cube.Filter`, add it to the two entries and to that test.
-- `Collect` sends no `/v1/sql` request for a member that the filter leaves out.
-- The filter never decodes `Meta` into typed structs. `rewriteArrays` in `cube/filter.go` writes only the lists that change, from the JSON text of the entries that stay. A property that the tool does not know keeps its bytes.
+- The two entries give the same snapshot, with one exception: the SQL text of a statement from which `Filter.Apply` removed a member. `Filter.Apply` keeps that text, and `Collect` asks Cube only for the members that stay. `TestCollectWithAFilterEqualsApplyOnTheWholeSnapshot` asserts it. If you add a setting to `cube.Filter`, add it to the two entries and to that test.
+- `Collect` puts no member that the filter leaves out in a `/v1/sql` request.
+- `Filter.Apply` removes a member from the `Members` of its entry of `GeneratedSQL` and from `MemberErrors`. It removes an entry with no member left. It never changes the SQL text.
+- The filter never decodes `DataModel` into typed structs. `rewriteArrays` in `cube/filter.go` writes only the lists that change, from the JSON text of the entries that stay. A property that the tool does not know keeps its bytes.
 - A snapshot is the whole data model for Coalesce Quality: a cube or a view that is not in the snapshot is removed there. Say this in the help text of each setting that removes a cube or a view.
 - Give each new setting a flag and a `CUBE_*` variable in `cmd/upload.go`, a row in the README and a line in the run summary (`printReport`).
 
@@ -66,7 +84,18 @@ The package `github.com/getsynq/synq-cube/cube` has two callers: this tool and t
 - `cube.DataSource` has no field for a credential. Do not add one.
 - `Collect` reads no environment variable. The CLI calls `DataSourcesFromEnv(os.Environ())` and gives the result in the options.
 - `Collect` keeps `default` and the data sources that the members use. `Filter.Apply` keeps the list as it is.
+- `Collect` removes the scheme and the port from `DataSource.Host` (`hostOnly`), and it keeps each name one time.
 - A failed read of Cube Cloud is a warning, never an error.
+
+### The git repository
+
+`Snapshot.Git` and `Snapshot.ModelPath` name the git repository of the data model. `Collect` copies them from `Options.Git` and `Options.ModelPath`. It reads no environment variable and runs no program. A nil `ModelPath` means that the directory is not known. An empty `ModelPath` means the root of the repository.
+
+- `cmd/upload.go` (`newGitSettings`) reads the settings. `internal/gitcontext` reads the variables of a CI system and the git checkout.
+- Send each URL through `gitcontext.SanitizeURL`. It removes the user name and the password, and it returns an empty text for a text that is not the URL of a remote repository. Do not print a URL that it refused: the text can hold a credential.
+- A failure of the `git` binary is silent and gives no git context. Do not add a git library.
+- A test of `cmd/` sets `Deps.Environ` and `Deps.WorkDir`, so the test does not read the checkout and the variables of the machine.
+- With `--input` the command reads only the settings, and they replace the values of the file.
 
 ### The snapshot file
 
@@ -76,11 +105,13 @@ The package `github.com/getsynq/synq-cube/cube` has two callers: this tool and t
 - `quality.NewSnapshot` maps the message of a file to a `cube.Snapshot`. The filter and the counts then work on the snapshot, as after a collection.
 - The tool sends its own `uploader_version` and `uploader_build_time`, never the values of the file.
 - With `--input` the tool sends no request to Cube. It refuses the flags that set how it reads Cube (`collectionFlags`). Add a new collection flag to that list.
+- A file with a field that the message does not have, for example `meta` or `memberSql`, is refused.
 
 ## What the tool must never do
 
 - Do not read a credential of a data source of Cube (`CUBEJS_DB_USER`, `CUBEJS_DB_PASS` and the others). See § The data sources.
 - Do not call `/v1/load`. The promise to the customer is that no data rows leave the network. `TestSnapshotOfTheRecording` in `cube/` asserts the list of request paths.
+- Do not send or print a user name or a password of a git URL.
 - Do not send or print the security context, `CUBE_API_SECRET`, `CUBE_API_TOKEN`, `CUBE_CLOUD_API_KEY` or `QUALITY_TOKEN`. A secret has an environment variable and no flag.
 - Do not add a `--deployment` flag. The integration behind `QUALITY_TOKEN` names the deployment.
 - Do not send data to a host other than the Cube deployment, Cube Cloud and the Coalesce Quality API. Do not add telemetry.
@@ -107,6 +138,7 @@ The package `github.com/getsynq/synq-cube/cube` has two callers: this tool and t
 
 - The proto messages and the gRPC client come from the buf generated SDK of the public API: `buf.build/gen/go/getsynq/api/protocolbuffers/go` and `buf.build/gen/go/getsynq/api/grpc/go`. The protos are at <https://buf.build/getsynq/api>.
 - Only `internal/quality` and the tests of `cmd/` import them.
+- `buf.build/go/protovalidate` is a dependency of the tests of `internal/quality` only. Do not import it in the code of the binary.
 - Do not commit a `replace` directive for these modules. To build with a local copy, use a `go.work` file. Git ignores `go.work`.
 - A version of a buf module holds two versions: the version of the plugin, then the date and the commit of the protos. Before you change a pin, check that the date of the protos does not go back.
 - After a change of `go.mod`, run `GOWORK=off go mod tidy`, then `GOWORK=off go build ./... && echo OK`.
