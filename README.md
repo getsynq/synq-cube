@@ -8,6 +8,40 @@ From a snapshot, Coalesce Quality shows each cube and each view with its measure
 
 The tool is open source (Apache 2.0), so you can check what it reads and what it sends. See [Build it yourself, change it](#build-it-yourself-change-it).
 
+## Quick start
+
+This is the shortest path from nothing to a data model in Coalesce Quality. Each step has its own section with the details.
+
+1. In Coalesce Quality, create a Cube integration and copy its token. See [Before you start](#before-you-start).
+2. Install the tool. See [Install](#install).
+3. Set the credentials as environment variables:
+
+   ```bash
+   export CUBE_API_URL=https://cube.example.com/cubejs-api
+   export CUBE_API_SECRET=...        # the value of CUBEJS_API_SECRET of the deployment
+   export QUALITY_TOKEN=...          # the token of the Cube integration
+   export QUALITY_REGION=eu          # eu, us or au
+   ```
+
+   For Cube Cloud, see [Cube Cloud](#cube-cloud).
+4. Collect a snapshot and send nothing:
+
+   ```bash
+   synq-cube upload --dry-run --output snapshot.json
+   ```
+
+5. Read the summary that the tool prints. Check the count of cubes and views, `Members with an error: 0` and one `Data source` line for each data source. See [Check the result](#check-the-result).
+6. Send the snapshot:
+
+   ```bash
+   synq-cube upload --input snapshot.json
+   ```
+
+7. Open the Cube integration in Coalesce Quality and check that the cubes and the views are there. See [Check the result](#check-the-result).
+8. Run `synq-cube upload` after each deploy of the data model, or on a schedule. See [Run it on a schedule](#run-it-on-a-schedule).
+
+If an AI agent runs these steps for you, give it [Run it with an AI agent](#run-it-with-an-ai-agent).
+
 ## What it reads
 
 `synq-cube upload` sends two kinds of request to the Cube REST API. They are the same on Cube Core and on Cube Cloud.
@@ -151,6 +185,30 @@ docker run --rm \
 
 The tool sends a request to Cube again after status 5xx, status 429, a network error and the `Continue wait` response. It sends the upload again if the Coalesce Quality API is not available.
 
+## Check the result
+
+### In the output of the tool
+
+| Line | Good | If it is not |
+|---|---|---|
+| `Cubes:` and `Views:` | The counts of your data model | The token does not see the whole data model. See [Read access to all members](#read-access-to-all-members). |
+| `Members with an error:` | `0` | Read the `warning:` lines. Each has the name of a member and the error text of Cube. Coalesce Quality shows such a member with no lineage. |
+| `Data source <name>:` | One line for each data source, with a type and a database, a host or a project | Add `--data-source`. See [How Coalesce Quality finds the warehouse of a data source](#how-coalesce-quality-finds-the-warehouse-of-a-data-source). |
+| `Data sources that the snapshot does not describe:` | Absent | The cubes of these data sources have no lineage to the warehouse tables. Add `--data-source` for each. |
+| `Git repository:` | The repository, the branch and the commit of the data model | Set `--git-url`, or name the repository in the settings of the Cube integration. |
+| `Sent the snapshot to Coalesce Quality` | Present, and the exit status is 0 | See [Troubleshooting](#troubleshooting). |
+
+The tool prints the summary on the standard output, and the warnings and the errors on the standard error.
+
+### In Coalesce Quality
+
+Coalesce Quality reads a snapshot in the background. Allow some minutes for a large data model.
+
+1. Open the settings page of the Cube integration. It shows the time and the result of the last snapshot, with the count of cubes and views and with the warnings.
+2. Open the catalog and filter by the Cube integration. Each cube and each view of the snapshot is there, in the folders of its file in the data model.
+3. Open one cube. Check its measures and dimensions, and its lineage to the warehouse tables.
+4. If a cube has no lineage to a warehouse table, check the `Data source` lines of the run. Coalesce Quality needs a warehouse integration for the database of that data source.
+
 ## Settings
 
 Each setting is an environment variable. The settings that are not secrets have a flag too, and the flag wins.
@@ -225,6 +283,68 @@ The three `CUBE_SKIP_*` variables take `true` or `false`.
 | `--output <file>` | Write the snapshot to the file as JSON |
 | `--input <file>` | Send the snapshot of the file and send no request to Cube. `-` is the standard input. |
 | `--dry-run` | Send nothing to Coalesce Quality. Use it with `--output`, or with `--input` to check a file. |
+
+## Run it with an AI agent
+
+This section is for a coding agent, for example Claude Code, that sets the tool up for a person. All of it is true for a person too.
+
+The tool is safe to drive from an agent:
+
+- It never asks a question. Each setting is a flag or an environment variable, and `synq-cube upload --help` lists them all.
+- A run with `--dry-run` sends nothing to Coalesce Quality and needs no `QUALITY_TOKEN`.
+- No run changes the Cube deployment, and no run starts a query on the warehouse.
+- The exit status is 0 only if the run did all that it had to do. See [Exit status](#exit-status).
+
+What the agent needs from the person:
+
+- `QUALITY_TOKEN` and the region. Only a person can create the Cube integration, in Coalesce Quality.
+- One credential of Cube: `CUBE_API_SECRET`, `CUBE_API_TOKEN` or `CUBE_CLOUD_API_KEY`.
+- Network access from the machine of the agent to the Cube REST API.
+
+Rules for the agent:
+
+1. Read each secret from the environment. Do not write a secret in a command line, in a file of the repository or in your answer.
+2. Do not print the snapshot file. It can hold the SQL of a private data model. Read it with the `jq` commands below.
+3. Start with a dry run. Send the snapshot only after the checks pass, or after the person agrees to send it with the gaps that you found.
+4. Send the same file that you checked, with `--input`. Do not collect a second time.
+5. Use the same filters on each run. A cube or a view that is not in a snapshot is removed from Coalesce Quality.
+
+The sequence:
+
+```bash
+# 1. Is the tool there?
+synq-cube --version
+
+# 2. Are the settings there? Print only the names, never the values.
+env | grep -E '^(CUBE_|QUALITY_)' | cut -d= -f1
+
+# 3. Collect and send nothing. Keep the two streams.
+synq-cube upload --dry-run --output snapshot.json > run.out 2> run.err; echo "exit status $?"
+cat run.out
+grep -c '^warning:' run.err
+
+# 4. Check the snapshot.
+jq -r .dataModel snapshot.json | base64 -d | jq -r '.cubes[] | "\(.type) \(.name)"'
+jq '[.generatedSql[].members[]] | length' snapshot.json
+jq '.memberErrors // [] | map({member, error})' snapshot.json
+jq '.dataSources' snapshot.json
+jq '{gitContext, modelPath}' snapshot.json
+
+# 5. Send the file that you checked.
+synq-cube upload --input snapshot.json; echo "exit status $?"
+```
+
+Stop and ask the person if one of these is true:
+
+- The exit status of step 3 is not 0. Give the last lines of `run.err`, and see [Troubleshooting](#troubleshooting).
+- The data model has fewer cubes or views than the person expects. The token does not see all of it.
+- More than a few members have an error. Each such member has no lineage in Coalesce Quality.
+- A data source has no description, or `dataSources` is absent. Ask for the database type and the database, then add `--data-source`.
+- `gitContext` names a repository that does not hold the data model. Set `--git-url`, or `--no-git-context`.
+
+After step 5, tell the person what you sent: the counts, the members with an error, the data sources and the git repository. Then give them [In Coalesce Quality](#in-coalesce-quality), as only a person with access to the workspace can do that check.
+
+To make the run permanent, add it to the pipeline that deploys the data model. See [Run it on a schedule](#run-it-on-a-schedule). Keep the secrets in the secret store of the CI system.
 
 ## How the tool reads the SQL
 
@@ -498,6 +618,27 @@ export QUALITY_TOKEN=...
 
 synq-cube upload
 ```
+
+The API key needs only two permissions on one deployment. An admin of the Cube Cloud account creates the key with the Cube Cloud API and an API key of their own:
+
+```bash
+curl -s -X POST "$CUBE_CLOUD_URL/api/v1/api-keys" \
+  -H "Authorization: Bearer $CUBE_CLOUD_ADMIN_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "coalesce-quality",
+    "deploymentIds": [42],
+    "allowedEndpoints": [
+      "DeploymentEnvironmentPublicController.getDeploymentEnvironments",
+      "DeploymentEnvironmentPublicController.createDeploymentEnvironmentTokenForMetaSync"
+    ]
+  }'
+```
+
+- `deploymentIds` limits the key to the deployment. `allowedEndpoints` limits it to the list of the environments and to the token for the metadata of the deployment.
+- The response holds the key one time, in `token`. Keep it in a secret store.
+- A key with these two permissions gives the full snapshot: the data model, the SQL of the members, the model export and the data sources.
+- To give the key an end date, add `"ttlHours"`.
 
 The token that Cube Cloud creates has the scopes `meta` and `meta-private`. If the deployment refuses the `/v1/sql` requests of that token, the tool prints a warning for each member.
 
