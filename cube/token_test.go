@@ -253,6 +253,7 @@ func (s *TokenSuite) TestCollectWithCubeCloudAddsTheModelExport() {
 	cloud := newFakeCloud(server.APIURL() + "/v1")
 	defer cloud.Close()
 	server.Authorization = "Bearer " + cloud.token
+	server.DataSources = []byte(`{"data":{"data_sources":[]}}`)
 	server.ModelExport = []byte(`{"data":[{"name":"orders"}],"pagination":{"total":1,"offset":0,"limit":100}}`)
 
 	tokens, err := cube.NewCloudTokenSource(cube.CloudConfig{URL: cloud.URL, APIKey: "platform-key", DeploymentID: 7})
@@ -278,6 +279,7 @@ func (s *TokenSuite) TestModelExportFailureIsAWarning() {
 	defer server.Close()
 	cloud := newFakeCloud(server.APIURL())
 	defer cloud.Close()
+	server.DataSources = []byte(`{"data":{"data_sources":[]}}`)
 
 	tokens, err := cube.NewCloudTokenSource(cube.CloudConfig{URL: cloud.URL, APIKey: "platform-key", DeploymentID: 7})
 	s.Require().NoError(err)

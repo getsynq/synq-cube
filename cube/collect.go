@@ -29,6 +29,14 @@ type Options struct {
 	// request for a member that the filter leaves out. The snapshot is the snapshot that
 	// Filter.Apply gives for a collection with no filter.
 	Filter Filter
+	// DataSources says what the data sources of the deployment are, from a setting of the
+	// caller. An entry wins over the entry of Cube Cloud and of EnvironmentDataSources with the
+	// same name.
+	DataSources []DataSource
+	// EnvironmentDataSources says what the data sources are, from the environment of Cube. Give
+	// the result of DataSourcesFromEnv. An entry of Cube Cloud with the same name wins over it.
+	// Collect itself reads no environment variable.
+	EnvironmentDataSources []DataSource
 	// Now gives the time of the snapshot. Nil means time.Now.
 	Now func() time.Time
 }
@@ -51,6 +59,9 @@ type Report struct {
 	// LeftOut says what the filter left out. In a report of Collect, ModelExportSkipped is true
 	// if the client is a Cube Cloud client and the filter stopped the model export.
 	LeftOut
+	// DataSourceOrigins says where the description of each data source of the snapshot came
+	// from, by the name of the data source. Describe does not fill it.
+	DataSourceOrigins map[string]DataSourceOrigin
 	// Warnings are problems that did not stop the snapshot.
 	Warnings []string
 }
@@ -90,6 +101,11 @@ func Describe(snapshot *Snapshot) (*Report, error) {
 // cube and view. A member for which Cube returns an error stays in the snapshot with the error
 // text. If the client uses a CloudTokenSource, Collect requests `/v1/model-export` too, and a
 // failure of that request is a warning.
+//
+// The snapshot says what each data source is, if the caller or Cube Cloud says it: the entries
+// of Options.DataSources, then the response of `/v1/data-sources` of Cube Cloud, then the
+// entries of Options.EnvironmentDataSources. It keeps `default` and the data sources that the
+// members use. A failure of the Cube Cloud request is a warning.
 //
 // The Filter of the options removes cubes, views and members from the snapshot. A view that
 // includes members of a removed cube stays, with a warning.
@@ -177,6 +193,27 @@ func Collect(ctx context.Context, client *Client, options Options) (*Snapshot, *
 		}
 	}
 	snapshot.MemberSQL = results
+
+	lists := []originList{{origin: OriginEnvironment, sources: options.EnvironmentDataSources}}
+	if client.Cloud() {
+		cloud, err := client.DataSources(ctx)
+		if ctx.Err() != nil {
+			return nil, nil, ctx.Err()
+		}
+		if err != nil {
+			report.Warnings = append(report.Warnings, fmt.Sprintf("the data sources of Cube Cloud are not in the snapshot: %s", err))
+		}
+		lists = append(lists, originList{origin: OriginCubeCloud, sources: cloud})
+	}
+	lists = append(lists, originList{origin: OriginSetting, sources: options.DataSources})
+	merged, origins := mergeDataSources(lists...)
+	snapshot.DataSources = usedDataSources(merged, results)
+	if len(snapshot.DataSources) > 0 {
+		report.DataSourceOrigins = make(map[string]DataSourceOrigin, len(snapshot.DataSources))
+		for _, source := range snapshot.DataSources {
+			report.DataSourceOrigins[source.Name] = origins[source.Name]
+		}
+	}
 
 	if client.Cloud() && filter.dropsModelExport(removed) {
 		report.ModelExportSkipped = true

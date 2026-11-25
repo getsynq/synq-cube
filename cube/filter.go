@@ -19,7 +19,8 @@ import (
 //
 // Collect applies the filter of its Options while it reads Cube. Apply applies a filter to a
 // snapshot that exists, for example one that was read from a file. The two give the same
-// snapshot.
+// snapshot, but for DataSources: Collect keeps the data sources that the members of its
+// snapshot use, and Apply keeps the list as it is.
 type Filter struct {
 	// Include holds glob patterns (the syntax of path.Match, case sensitive) for the names of
 	// the cubes and the views that the snapshot holds. Empty means all of them.

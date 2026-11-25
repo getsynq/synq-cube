@@ -24,6 +24,9 @@ type Snapshot struct {
 	// SecurityContextLabel is a name for the security context of the token. Empty means that
 	// the caller did not give it.
 	SecurityContextLabel string
+	// DataSources says what each data source of the deployment is. Nil means that it is not
+	// known. Filter.Apply keeps the list as it is.
+	DataSources []DataSource
 }
 
 // MemberSQL is the SQL that Cube generates for a query of one member.

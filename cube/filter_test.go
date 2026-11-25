@@ -240,6 +240,7 @@ func (s *FilterSuite) cloudClient() *cube.Client {
 	cloud := newFakeCloud(s.server.APIURL() + "/v1")
 	s.T().Cleanup(cloud.Close)
 	s.server.Authorization = "Bearer " + cloud.token
+	s.server.DataSources = []byte(`{"data":{"data_sources":[]}}`)
 	s.server.ModelExport = []byte(`{"data":[{"name":"orders"}],"pagination":{"total":1,"offset":0,"limit":100}}`)
 	tokens, err := cube.NewCloudTokenSource(cube.CloudConfig{URL: cloud.URL, APIKey: "platform-key", DeploymentID: 7})
 	s.Require().NoError(err)

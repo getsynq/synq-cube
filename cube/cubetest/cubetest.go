@@ -66,6 +66,8 @@ type Server struct {
 	UnavailableMembers map[string]bool
 	// ModelExport is the response of `POST /v1/model-export`. Nil means status 404, as on Cube Core.
 	ModelExport []byte
+	// DataSources is the response of `GET /v1/data-sources`. Nil means status 404, as on Cube Core.
+	DataSources []byte
 	// SQLDelay is how long each `/v1/sql` request takes.
 	SQLDelay time.Duration
 
@@ -137,6 +139,13 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write(s.Meta)
 	case r.Method == http.MethodGet && r.URL.Path == BasePath+"/v1/sql":
 		s.serveSQL(w, r)
+	case r.Method == http.MethodGet && r.URL.Path == BasePath+"/v1/data-sources":
+		if s.DataSources == nil {
+			writeError(w, http.StatusNotFound, "Not found")
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(s.DataSources)
 	case r.Method == http.MethodPost && r.URL.Path == BasePath+"/v1/model-export":
 		if s.ModelExport == nil {
 			writeError(w, http.StatusNotFound, "Not found")
