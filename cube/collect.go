@@ -25,11 +25,15 @@ type Options struct {
 	SecurityContextLabel string
 	// CubeVersion is the version of Cube, if the caller knows it. The REST API does not report it.
 	CubeVersion string
+	// Filter leaves parts of the data model out of the snapshot. Collect sends no `/v1/sql`
+	// request for a member that the filter leaves out. The snapshot is the snapshot that
+	// Filter.Apply gives for a collection with no filter.
+	Filter Filter
 	// Now gives the time of the snapshot. Nil means time.Now.
 	Now func() time.Time
 }
 
-// Report says what Collect read.
+// Report says what a snapshot holds and what was left out of it.
 type Report struct {
 	// Cubes is the count of cubes. It does not include the views.
 	Cubes int
@@ -44,8 +48,40 @@ type Report struct {
 	GroupedMembers int
 	// ModelExport is true if the snapshot has the response of `/v1/model-export`.
 	ModelExport bool
+	// LeftOut says what the filter left out. In a report of Collect, ModelExportSkipped is true
+	// if the client is a Cube Cloud client and the filter stopped the model export.
+	LeftOut
 	// Warnings are problems that did not stop the snapshot.
 	Warnings []string
+}
+
+// Describe counts what a snapshot holds: the cubes, the views and the members of Meta, the
+// members with an error and the grouped members of MemberSQL, and the model export. The report
+// has no warnings and nothing left out.
+//
+// Describe returns an error if Meta is not a data model.
+func Describe(snapshot *Snapshot) (*Report, error) {
+	meta, err := cubemeta.Parse(snapshot.Meta)
+	if err != nil {
+		return nil, err
+	}
+	report := &Report{ModelExport: snapshot.ModelExport != nil}
+	for _, c := range meta.Cubes {
+		if c.IsView() {
+			report.Views++
+		} else {
+			report.Cubes++
+		}
+		report.Members += len(c.Members())
+	}
+	for _, member := range snapshot.MemberSQL {
+		if member.Error != "" {
+			report.MemberErrors++
+		} else if !member.Ungrouped {
+			report.GroupedMembers++
+		}
+	}
+	return report, nil
 }
 
 // Collect reads the data model of a Cube deployment and returns it as one snapshot.
@@ -55,25 +91,42 @@ type Report struct {
 // text. If the client uses a CloudTokenSource, Collect requests `/v1/model-export` too, and a
 // failure of that request is a warning.
 //
-// Collect returns an error if the `/v1/meta` request fails, if its response is not a data
-// model, or if ctx ends.
+// The Filter of the options removes cubes, views and members from the snapshot. A view that
+// includes members of a removed cube stays, with a warning.
+//
+// Collect returns an error if a setting is not valid, if the `/v1/meta` request fails, if its
+// response is not a data model, if the filter leaves no cube and no view (ErrNothingLeft), or
+// if ctx ends.
 func Collect(ctx context.Context, client *Client, options Options) (*Snapshot, *Report, error) {
+	filter := options.Filter
+	if err := filter.Validate(); err != nil {
+		return nil, nil, err
+	}
 	now := options.Now
 	if now == nil {
 		now = time.Now
 	}
-	collectedAt := now()
 
 	metaBody, err := client.Meta(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
-	meta, err := cubemeta.Parse(metaBody)
+	snapshot := &Snapshot{
+		Meta:                 metaBody,
+		CollectedAt:          now(),
+		CubeVersion:          options.CubeVersion,
+		SecurityContextLabel: options.SecurityContextLabel,
+	}
+	filtered := &FilterReport{}
+	removed, meta, err := filter.applyToMeta(snapshot, filtered)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	report := &Report{}
+	report := &Report{LeftOut: filtered.LeftOut}
+	if removed.any {
+		report.Warnings = lostLineageWarnings(meta, removed.names)
+	}
 	var targets []memberTarget
 	for _, c := range meta.Cubes {
 		if c.IsView() {
@@ -86,12 +139,19 @@ func Collect(ctx context.Context, client *Client, options Options) (*Snapshot, *
 		}
 	}
 	report.Members = len(targets)
+	if filter.SkipMemberSQL {
+		report.MemberSQLSkipped = true
+		targets = nil
+	}
 
 	concurrency := options.Concurrency
 	if concurrency <= 0 {
 		concurrency = DefaultConcurrency
 	}
-	results := make([]MemberSQL, len(targets))
+	var results []MemberSQL
+	if len(targets) > 0 {
+		results = make([]MemberSQL, len(targets))
+	}
 	group, groupCtx := errgroup.WithContext(ctx)
 	group.SetLimit(concurrency)
 	for i, target := range targets {
@@ -116,16 +176,11 @@ func Collect(ctx context.Context, client *Client, options Options) (*Snapshot, *
 			report.GroupedMembers++
 		}
 	}
+	snapshot.MemberSQL = results
 
-	snapshot := &Snapshot{
-		Meta:                 metaBody,
-		MemberSQL:            results,
-		CollectedAt:          collectedAt,
-		CubeVersion:          options.CubeVersion,
-		SecurityContextLabel: options.SecurityContextLabel,
-	}
-
-	if client.Cloud() {
+	if client.Cloud() && filter.dropsModelExport(removed) {
+		report.ModelExportSkipped = true
+	} else if client.Cloud() {
 		modelExport, warning := collectModelExport(ctx, client)
 		if ctx.Err() != nil {
 			return nil, nil, ctx.Err()

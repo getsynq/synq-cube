@@ -63,6 +63,12 @@ type Cube struct {
 	Raw json.RawMessage
 }
 
+// Hidden is true for a cube or a view that is not public: `public: false`, or the older
+// `isVisible: false`.
+func (c *Cube) Hidden() bool {
+	return !c.Public || !c.IsVisible
+}
+
 // IsView is true for a view.
 func (c *Cube) IsView() bool {
 	return c.Type == TypeView
@@ -107,6 +113,12 @@ type Member struct {
 	DrillMembers  []string
 
 	Raw json.RawMessage
+}
+
+// Hidden is true for a member that is not public: `public: false`, or the older
+// `isVisible: false`.
+func (m *Member) Hidden() bool {
+	return !m.Public || !m.IsVisible
 }
 
 // ShortName is the name without the cube or the view (`revenue`).
@@ -190,7 +202,7 @@ func Parse(data []byte) (*Meta, error) {
 	}
 	meta.Cubes = make([]*Cube, 0, len(items))
 	for _, item := range items {
-		cube, ok := parseCube(item)
+		cube, ok := ParseCube(item)
 		if !ok {
 			continue
 		}
@@ -199,7 +211,9 @@ func Parse(data []byte) (*Meta, error) {
 	return meta, nil
 }
 
-func parseCube(raw json.RawMessage) (*Cube, bool) {
+// ParseCube reads one entry of the `cubes` list. It returns false for an entry that is not an
+// object or has no name.
+func ParseCube(raw json.RawMessage) (*Cube, bool) {
 	o, ok := object(raw)
 	if !ok {
 		return nil, false
@@ -282,49 +296,57 @@ func parseMembers(raw json.RawMessage, kind MemberKind) []*Member {
 	}
 	members := make([]*Member, 0, len(items))
 	for _, item := range items {
-		o, ok := object(item)
+		if member, ok := ParseMember(item, kind); ok {
+			members = append(members, member)
+		}
+	}
+	return members
+}
+
+// ParseMember reads one entry of the `measures`, `dimensions` or `segments` list of a cube. It
+// returns false for an entry that is not an object or has no name.
+func ParseMember(raw json.RawMessage, kind MemberKind) (*Member, bool) {
+	o, ok := object(raw)
+	if !ok {
+		return nil, false
+	}
+	member := &Member{
+		Kind:         kind,
+		Name:         text(o["name"]),
+		Title:        text(o["title"]),
+		ShortTitle:   text(o["shortTitle"]),
+		Description:  text(o["description"]),
+		Type:         text(o["type"]),
+		AggType:      text(o["aggType"]),
+		SQL:          text(o["sql"]),
+		AliasMember:  text(o["aliasMember"]),
+		Public:       boolean(o["public"], true),
+		IsVisible:    boolean(o["isVisible"], true),
+		PrimaryKey:   boolean(o["primaryKey"], false),
+		Cumulative:   boolean(o["cumulative"], false),
+		Format:       present(o["format"]),
+		Meta:         present(o["meta"]),
+		DrillMembers: texts(o["drillMembers"]),
+		Raw:          raw,
+	}
+	if member.Name == "" {
+		return nil, false
+	}
+	for _, granularity := range array(o["granularities"]) {
+		g, ok := object(granularity)
 		if !ok {
 			continue
 		}
-		member := &Member{
-			Kind:         kind,
-			Name:         text(o["name"]),
-			Title:        text(o["title"]),
-			ShortTitle:   text(o["shortTitle"]),
-			Description:  text(o["description"]),
-			Type:         text(o["type"]),
-			AggType:      text(o["aggType"]),
-			SQL:          text(o["sql"]),
-			AliasMember:  text(o["aliasMember"]),
-			Public:       boolean(o["public"], true),
-			IsVisible:    boolean(o["isVisible"], true),
-			PrimaryKey:   boolean(o["primaryKey"], false),
-			Cumulative:   boolean(o["cumulative"], false),
-			Format:       present(o["format"]),
-			Meta:         present(o["meta"]),
-			DrillMembers: texts(o["drillMembers"]),
-			Raw:          item,
-		}
-		if member.Name == "" {
-			continue
-		}
-		for _, granularity := range array(o["granularities"]) {
-			g, ok := object(granularity)
-			if !ok {
-				continue
-			}
-			member.Granularities = append(member.Granularities, &Granularity{
-				Name:     text(g["name"]),
-				Title:    text(g["title"]),
-				Interval: text(g["interval"]),
-				Offset:   text(g["offset"]),
-				Origin:   text(g["origin"]),
-				Raw:      granularity,
-			})
-		}
-		members = append(members, member)
+		member.Granularities = append(member.Granularities, &Granularity{
+			Name:     text(g["name"]),
+			Title:    text(g["title"]),
+			Interval: text(g["interval"]),
+			Offset:   text(g["offset"]),
+			Origin:   text(g["origin"]),
+			Raw:      granularity,
+		})
 	}
-	return members
+	return member, true
 }
 
 func parseFolders(raw json.RawMessage) []*Folder {

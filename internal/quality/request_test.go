@@ -5,7 +5,9 @@ import (
 	"testing"
 	"time"
 
+	ingestcubev1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/ingest/cube/v1"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"github.com/getsynq/synq-cube/cube"
@@ -100,4 +102,56 @@ func TestNewRequestKeepsAbsentFieldsAbsent(t *testing.T) {
 	require.NotNil(t, member.Sql)
 	require.Nil(t, member.DataSource)
 	require.Nil(t, member.Error)
+}
+
+func TestNewSnapshotIsTheReverseOfNewRequest(t *testing.T) {
+	for name, snapshot := range map[string]cube.Snapshot{
+		"each field": {
+			Meta: []byte(`{"cubes":[]}`),
+			MemberSQL: []cube.MemberSQL{
+				{Member: "orders.revenue", DataSource: "default", SQL: "SELECT 1", Ungrouped: true},
+				{Member: "orders.grouped", SQL: "SELECT 2"},
+				{Member: "orders.empty"},
+				{Member: "orders.broken", Error: "no join path"},
+			},
+			ModelExport:          []byte(`{"data":[]}`),
+			CollectedAt:          time.Date(2026, 3, 4, 5, 6, 7, 8, time.UTC),
+			CubeVersion:          "1.8.30",
+			SecurityContextLabel: "full-read",
+		},
+		"only the required fields": {
+			Meta:        []byte(`{"cubes":[]}`),
+			CollectedAt: time.Date(2026, 3, 4, 5, 6, 7, 0, time.UTC),
+		},
+	} {
+		request := NewRequest(&snapshot, "0.1.0", "2026-03-01T00:00:00Z")
+		back := NewSnapshot(request)
+		require.Equal(t, &snapshot, back, name)
+
+		// The message of the snapshot that came back is the same message.
+		again := NewRequest(back, "0.1.0", "2026-03-01T00:00:00Z")
+		require.True(t, proto.Equal(request, again), name)
+	}
+}
+
+func TestNewSnapshotOfAMessageThatAPersonEdited(t *testing.T) {
+	sql, text, source := "SELECT 1", "no join path", "default"
+	request := &ingestcubev1.IngestSnapshotRequest{
+		Meta: []byte(`{"cubes":[]}`),
+		MemberSql: []*ingestcubev1.MemberSql{
+			{Member: "orders.both", Sql: &sql, Error: &text, DataSource: &source},
+			{Member: "orders.neither"},
+		},
+		UploaderVersion: "9.9.9",
+	}
+
+	snapshot := NewSnapshot(request)
+
+	require.True(t, snapshot.CollectedAt.IsZero())
+	require.Equal(t, []cube.MemberSQL{
+		{Member: "orders.both", Error: "no join path"},
+		{Member: "orders.neither"},
+	}, snapshot.MemberSQL)
+	// A message with no collected_at stays a message with no collected_at.
+	require.Nil(t, NewRequest(snapshot, "", "").CollectedAt)
 }
