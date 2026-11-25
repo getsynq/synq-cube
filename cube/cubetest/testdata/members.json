@@ -1,0 +1,4416 @@
+[
+ {
+  "cube": "pg_products",
+  "type": "cube",
+  "kind": "measure",
+  "member": "pg_products.count",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT CASE WHEN (\"pg_products\".id) IS NOT NULL THEN 1 END \"pg_products__count\" \nFROM  schema_a.products  AS \"pg_products\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_a.products"
+  ],
+  "columns": [
+   "schema_a.products.id"
+  ]
+ },
+ {
+  "cube": "pg_products",
+  "type": "cube",
+  "kind": "measure",
+  "member": "pg_products.avg_price",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT \"pg_products\".price \"pg_products__avg_price\" \nFROM  schema_a.products  AS \"pg_products\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_a.products"
+  ],
+  "columns": [
+   "schema_a.products.price"
+  ]
+ },
+ {
+  "cube": "pg_products",
+  "type": "cube",
+  "kind": "measure",
+  "member": "pg_products.budget_count",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"pg_products\".price >= 0 AND \"pg_products\".price < 10) THEN \"pg_products\".id END) IS NOT NULL THEN 1 END \"pg_products__budget_count\" \nFROM  schema_a.products  AS \"pg_products\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_a.products"
+  ],
+  "columns": [
+   "schema_a.products.id",
+   "schema_a.products.price"
+  ]
+ },
+ {
+  "cube": "pg_products",
+  "type": "cube",
+  "kind": "measure",
+  "member": "pg_products.standard_count",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"pg_products\".price >= 10 AND \"pg_products\".price < 30) THEN \"pg_products\".id END) IS NOT NULL THEN 1 END \"pg_products__standard_count\" \nFROM  schema_a.products  AS \"pg_products\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_a.products"
+  ],
+  "columns": [
+   "schema_a.products.id",
+   "schema_a.products.price"
+  ]
+ },
+ {
+  "cube": "pg_products",
+  "type": "cube",
+  "kind": "measure",
+  "member": "pg_products.premium_count",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"pg_products\".price >= 30 AND \"pg_products\".price < 1000000) THEN \"pg_products\".id END) IS NOT NULL THEN 1 END \"pg_products__premium_count\" \nFROM  schema_a.products  AS \"pg_products\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_a.products"
+  ],
+  "columns": [
+   "schema_a.products.id",
+   "schema_a.products.price"
+  ]
+ },
+ {
+  "cube": "pg_products",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "pg_products.id",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT \"pg_products\".id \"pg_products__id\" \nFROM  schema_a.products  AS \"pg_products\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_a.products"
+  ],
+  "columns": [
+   "schema_a.products.id"
+  ]
+ },
+ {
+  "cube": "pg_products",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "pg_products.name",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT \"pg_products\".name \"pg_products__name\" \nFROM  schema_a.products  AS \"pg_products\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_a.products"
+  ],
+  "columns": [
+   "schema_a.products.name"
+  ]
+ },
+ {
+  "cube": "pg_products",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "pg_products.category",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT \"pg_products\".category \"pg_products__category\" \nFROM  schema_a.products  AS \"pg_products\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_a.products"
+  ],
+  "columns": [
+   "schema_a.products.category"
+  ]
+ },
+ {
+  "cube": "pg_products",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "pg_products.is_active",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT \"pg_products\".is_active \"pg_products__is_active\" \nFROM  schema_a.products  AS \"pg_products\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_a.products"
+  ],
+  "columns": [
+   "schema_a.products.is_active"
+  ]
+ },
+ {
+  "cube": "pg_products",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "pg_products.created_at",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT (\"pg_products\".created_at::timestamptz AT TIME ZONE 'UTC') \"pg_products__created_at\" \nFROM  schema_a.products  AS \"pg_products\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_a.products"
+  ],
+  "columns": [
+   "schema_a.products.created_at"
+  ]
+ },
+ {
+  "cube": "pg_catalog",
+  "type": "view",
+  "kind": "measure",
+  "member": "pg_catalog.count",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT CASE WHEN (\"pg_order_items\".order_id || '-' || \"pg_order_items\".item_id) IS NOT NULL THEN 1 END \"pg_catalog__count\" \nFROM  schema_a.order_items  AS \"pg_order_items\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_a.order_items"
+  ],
+  "columns": [
+   "schema_a.order_items.item_id",
+   "schema_a.order_items.order_id"
+  ]
+ },
+ {
+  "cube": "pg_catalog",
+  "type": "view",
+  "kind": "measure",
+  "member": "pg_catalog.total_quantity",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT \"pg_order_items\".quantity \"pg_catalog__total_quantity\" \nFROM  schema_a.order_items  AS \"pg_order_items\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_a.order_items"
+  ],
+  "columns": [
+   "schema_a.order_items.quantity"
+  ]
+ },
+ {
+  "cube": "pg_catalog",
+  "type": "view",
+  "kind": "measure",
+  "member": "pg_catalog.pg_products_avg_price",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": " WITH \ncte_0 AS (  SELECT avg(\"pg_products_key_pg_products\".price) \"pg_products__avg_price\" \n  FROM (SELECT DISTINCT \"pg_products_key_pg_products\".id \"pg_products__id\" \n  FROM  schema_a.order_items  AS \"pg_products_key_pg_order_items\"\n  LEFT JOIN  schema_a.products  AS \"pg_products_key_pg_products\" ON \"pg_products_key_pg_order_items\".product_id = \"pg_products_key_pg_products\".id) AS \"keys\"\n  LEFT JOIN  schema_a.products  AS \"pg_products_key_pg_products\" ON ((\"keys\".\"pg_products__id\" = \"pg_products_key_pg_products\".id)))\nSELECT \"fk_aggregate\".\"pg_products__avg_price\" \"pg_catalog__pg_products_avg_price\" \nFROM  cte_0  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_a.order_items",
+   "schema_a.products"
+  ],
+  "columns": [
+   "schema_a.order_items.product_id",
+   "schema_a.products.id",
+   "schema_a.products.price"
+  ]
+ },
+ {
+  "cube": "pg_catalog",
+  "type": "view",
+  "kind": "dimension",
+  "member": "pg_catalog.pg_products_name",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT \"pg_products\".name \"pg_catalog__pg_products_name\" \nFROM  schema_a.order_items  AS \"pg_order_items\"\nLEFT JOIN  schema_a.products  AS \"pg_products\" ON \"pg_order_items\".product_id = \"pg_products\".id\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_a.order_items",
+   "schema_a.products"
+  ],
+  "columns": [
+   "schema_a.order_items.product_id",
+   "schema_a.products.id",
+   "schema_a.products.name"
+  ]
+ },
+ {
+  "cube": "pg_catalog",
+  "type": "view",
+  "kind": "dimension",
+  "member": "pg_catalog.pg_products_category",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT \"pg_products\".category \"pg_catalog__pg_products_category\" \nFROM  schema_a.order_items  AS \"pg_order_items\"\nLEFT JOIN  schema_a.products  AS \"pg_products\" ON \"pg_order_items\".product_id = \"pg_products\".id\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_a.order_items",
+   "schema_a.products"
+  ],
+  "columns": [
+   "schema_a.order_items.product_id",
+   "schema_a.products.category",
+   "schema_a.products.id"
+  ]
+ },
+ {
+  "cube": "events",
+  "type": "cube",
+  "kind": "measure",
+  "member": "events.count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"events\".EVENT_ID) IS NOT NULL THEN 1 END \"events__count\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "events",
+  "type": "cube",
+  "kind": "measure",
+  "member": "events.purchase_amount",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"events\".AMOUNT \"events__purchase_amount\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "events",
+  "type": "cube",
+  "kind": "measure",
+  "member": "events.signup_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"events\".EVENT_NAME = 'signup') THEN \"events\".EVENT_ID END) IS NOT NULL THEN 1 END \"events__signup_count\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "events",
+  "type": "cube",
+  "kind": "measure",
+  "member": "events.login_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"events\".EVENT_NAME = 'login') THEN \"events\".EVENT_ID END) IS NOT NULL THEN 1 END \"events__login_count\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "events",
+  "type": "cube",
+  "kind": "measure",
+  "member": "events.purchase_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"events\".EVENT_NAME = 'purchase') THEN \"events\".EVENT_ID END) IS NOT NULL THEN 1 END \"events__purchase_count\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "events",
+  "type": "cube",
+  "kind": "measure",
+  "member": "events.signup_to_purchase_rate",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT 1.0 * CASE WHEN (CASE WHEN (\"events\".EVENT_NAME = 'purchase') THEN \"events\".EVENT_ID END) IS NOT NULL THEN 1 END / NULLIF(CASE WHEN (CASE WHEN (\"events\".EVENT_NAME = 'signup') THEN \"events\".EVENT_ID END) IS NOT NULL THEN 1 END, 0) \"events__signup_to_purchase_rate\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "events",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "events.id",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"events\".EVENT_ID \"events__id\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "events",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "events.name",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"events\".EVENT_NAME \"events__name\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "events",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "events.event_at",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CONVERT_TIMEZONE('UTC', \"events\".EVENT_TS::timestamp_tz)::timestamp_ntz \"events__event_at\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "events",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "events.device",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"events\".PAYLOAD_DEVICE \"events__device\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "events",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "events.plan",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"events\".PAYLOAD_PLAN \"events__plan\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"orders\".ID) IS NOT NULL THEN 1 END \"orders__count\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.customer_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"orders\".CUSTOMER_ID) IS NOT NULL THEN 1 END \"orders__customer_count\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.revenue",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".AMOUNT \"orders__revenue\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.avg_amount",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".AMOUNT \"orders__avg_amount\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.min_amount",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".AMOUNT \"orders__min_amount\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.max_amount",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".AMOUNT \"orders__max_amount\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.average_order_value",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".AMOUNT / NULLIF(CASE WHEN (\"orders\".ID) IS NOT NULL THEN 1 END, 0) \"orders__average_order_value\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT",
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.median_customer_revenue",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"orders\".CUSTOMER_ID \"orders__customer_id\", \"orders\".AMOUNT \"orders__revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\n  ORDER BY  2  DESC),\ncte_1 AS (  SELECT MEDIAN(\"fk_aggregate\".\"orders__revenue\") \"orders__median_customer_revenue\" \n  FROM  cte_0  AS \"fk_aggregate\")\nSELECT \"fk_aggregate\".\"orders__median_customer_revenue\" \"orders__median_customer_revenue\" \nFROM  cte_1  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT",
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.first_order_at",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT MIN(\"orders\".ORDERED_AT) \"orders__first_order_at\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ORDERED_AT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.has_returns",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT BOOLOR_AGG(\"orders\".STATUS = 'returned') \"orders__has_returns\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.statuses_seen",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT LISTAGG(DISTINCT \"orders\".STATUS, ', ') \"orders__statuses_seen\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.new_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"orders\".STATUS = 'new') THEN \"orders\".ID END) IS NOT NULL THEN 1 END \"orders__new_count\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.new_revenue",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"orders\".STATUS = 'new') THEN \"orders\".AMOUNT END \"orders__new_revenue\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT",
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.paid_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"orders\".STATUS = 'paid') THEN \"orders\".ID END) IS NOT NULL THEN 1 END \"orders__paid_count\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.paid_revenue",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"orders\".STATUS = 'paid') THEN \"orders\".AMOUNT END \"orders__paid_revenue\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT",
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.shipped_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"orders\".STATUS = 'shipped') THEN \"orders\".ID END) IS NOT NULL THEN 1 END \"orders__shipped_count\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.shipped_revenue",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"orders\".STATUS = 'shipped') THEN \"orders\".AMOUNT END \"orders__shipped_revenue\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT",
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.delivered_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"orders\".STATUS = 'delivered') THEN \"orders\".ID END) IS NOT NULL THEN 1 END \"orders__delivered_count\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.delivered_revenue",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"orders\".STATUS = 'delivered') THEN \"orders\".AMOUNT END \"orders__delivered_revenue\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT",
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.returned_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"orders\".STATUS = 'returned') THEN \"orders\".ID END) IS NOT NULL THEN 1 END \"orders__returned_count\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.returned_revenue",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"orders\".STATUS = 'returned') THEN \"orders\".AMOUNT END \"orders__returned_revenue\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT",
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.completed_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"orders\".STATUS IN ('shipped', 'delivered')) THEN \"orders\".ID END) IS NOT NULL THEN 1 END \"orders__completed_count\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.high_value_completed_revenue",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"orders\".STATUS IN ('shipped', 'delivered')) AND (\"orders\".AMOUNT >= 1000) THEN \"orders\".AMOUNT END \"orders__high_value_completed_revenue\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT",
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.return_rate",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT 1.0 * CASE WHEN (CASE WHEN (\"orders\".STATUS = 'returned') THEN \"orders\".ID END) IS NOT NULL THEN 1 END / NULLIF(CASE WHEN (\"orders\".ID) IS NOT NULL THEN 1 END, 0) \"orders__return_rate\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.revenue_trailing_7_days",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"orders\".AMOUNT \"orders__revenue_trailing_7_days\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\")\nSELECT \"fk_aggregate\".\"orders__revenue_trailing_7_days\" \"orders__revenue_trailing_7_days\" \nFROM  cte_0  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.cumulative_revenue",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"orders\".AMOUNT \"orders__cumulative_revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\")\nSELECT \"fk_aggregate\".\"orders__cumulative_revenue\" \"orders__cumulative_revenue\" \nFROM  cte_0  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.revenue_year_to_date",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"orders\".AMOUNT \"orders__revenue_year_to_date\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\")\nSELECT \"fk_aggregate\".\"orders__revenue_year_to_date\" \"orders__revenue_year_to_date\" \nFROM  cte_0  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.revenue_prior_month",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"orders\".AMOUNT \"orders__revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"),\ncte_1 AS (  SELECT \"fk_aggregate\".\"orders__revenue\" \"orders__revenue_prior_month\" \n  FROM  cte_0  AS \"fk_aggregate\")\nSELECT \"fk_aggregate\".\"orders__revenue_prior_month\" \"orders__revenue_prior_month\" \nFROM  cte_1  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.revenue_month_over_month",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"orders\".AMOUNT \"orders__revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"),\ncte_1 AS (  SELECT \"orders\".AMOUNT \"orders__revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"),\ncte_2 AS (  SELECT \"fk_aggregate\".\"orders__revenue\" \"orders__revenue_prior_month\" \n  FROM  cte_1  AS \"fk_aggregate\"),\ncte_3 AS (  SELECT (\"q_0\".\"orders__revenue\" - \"q_1\".\"orders__revenue_prior_month\") / NULLIF(\"q_1\".\"orders__revenue_prior_month\", 0) \"orders__revenue_month_over_month\" \n  FROM  cte_0  AS \"q_0\"\n  INNER JOIN  cte_2  AS \"q_1\" ON 1 = 1)\nSELECT \"fk_aggregate\".\"orders__revenue_month_over_month\" \"orders__revenue_month_over_month\" \nFROM  cte_3  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.revenue_prior_fiscal_year",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"orders\".AMOUNT \"orders__revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"),\ncte_1 AS (  SELECT \"fk_aggregate\".\"orders__revenue\" \"orders__revenue_prior_fiscal_year\" \n  FROM  cte_0  AS \"fk_aggregate\")\nSELECT \"fk_aggregate\".\"orders__revenue_prior_fiscal_year\" \"orders__revenue_prior_fiscal_year\" \nFROM  cte_1  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.revenue_all_statuses",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"orders\".AMOUNT \"orders__revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"),\ncte_1 AS (  SELECT sum(\"fk_aggregate\".\"orders__revenue\") \"orders__revenue_all_statuses\" \n  FROM  cte_0  AS \"fk_aggregate\")\nSELECT \"fk_aggregate\".\"orders__revenue_all_statuses\" \"orders__revenue_all_statuses\" \nFROM  cte_1  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.revenue_share_of_statuses",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"orders\".AMOUNT \"orders__revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"),\ncte_1 AS (  SELECT sum(\"fk_aggregate\".\"orders__revenue\") \"orders__revenue_all_statuses\" \n  FROM  cte_0  AS \"fk_aggregate\"),\ncte_2 AS (  SELECT \"q_0\".\"orders__revenue\" / NULLIF(\"q_1\".\"orders__revenue_all_statuses\", 0) \"orders__revenue_share_of_statuses\" \n  FROM  cte_0  AS \"q_0\"\n  INNER JOIN  cte_1  AS \"q_1\" ON 1 = 1)\nSELECT \"fk_aggregate\".\"orders__revenue_share_of_statuses\" \"orders__revenue_share_of_statuses\" \nFROM  cte_2  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.revenue_of_status_group",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"orders\".AMOUNT \"orders__revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"),\ncte_1 AS (  SELECT sum(\"fk_aggregate\".\"orders__revenue\") \"orders__revenue_of_status_group\" \n  FROM  cte_0  AS \"fk_aggregate\")\nSELECT \"fk_aggregate\".\"orders__revenue_of_status_group\" \"orders__revenue_of_status_group\" \nFROM  cte_1  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.status_revenue_rank",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"orders\".AMOUNT \"orders__revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"),\ncte_1 AS (  SELECT rank() OVER (ORDER BY \"fk_aggregate\".\"orders__revenue\" desc) \"orders__status_revenue_rank\" \n  FROM  cte_0  AS \"fk_aggregate\")\nSELECT \"fk_aggregate\".\"orders__status_revenue_rank\" \"orders__status_revenue_rank\" \nFROM  cte_1  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.revenue_thousands",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".AMOUNT / 1000 \"orders__revenue_thousands\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.revenue_in_unit",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT 'thousands' \"orders__amount_unit\", \"orders\".AMOUNT / 1000 \"orders__revenue_thousands\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\n  WHERE ('thousands' = ?)\n  ORDER BY  2  DESC),\ncte_1 AS (  SELECT 'units' \"orders__amount_unit\", \"orders\".AMOUNT \"orders__revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\n  WHERE ('units' = ?)\n  ORDER BY  2  DESC),\ncte_2 AS (  SELECT CASE \"full_aggregate\".\"orders__amount_unit\" WHEN 'thousands' THEN \"full_aggregate\".\"orders__revenue_thousands\" ELSE \"full_aggregate\".\"orders__revenue\" END \"orders__revenue_in_unit\" \n  FROM (SELECT COALESCE(\"q_l\".\"orders__amount_unit\", \"q_r\".\"orders__amount_unit\") \"orders__amount_unit\", \"q_l\".\"orders__revenue_thousands\" \"orders__revenue_thousands\", \"q_r\".\"orders__revenue\" \"orders__revenue\" \n  FROM  cte_0  AS \"q_l\"\n  FULL JOIN  cte_1  AS \"q_r\" ON ((\"q_l\".\"orders__amount_unit\" IS NOT DISTINCT FROM \"q_r\".\"orders__amount_unit\"))) AS \"full_aggregate\")\nSELECT \"fk_aggregate\".\"orders__revenue_in_unit\" \"orders__revenue_in_unit\" \nFROM  cte_2  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "orders.debug_row_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"orders\".ID) IS NOT NULL THEN 1 END \"orders__debug_row_count\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "orders.id",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".ID \"orders__id\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "orders.customer_id",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".CUSTOMER_ID \"orders__customer_id\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "orders.customer_region",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"customers\".REGION \"orders__customer_region\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLEFT JOIN  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\" ON \"orders\".CUSTOMER_ID = \"customers\".ID\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "orders.status",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".STATUS \"orders__status\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "orders.status_group",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN \"orders\".STATUS IN ('new', 'paid') THEN 'open' WHEN \"orders\".STATUS IN ('shipped', 'delivered') THEN 'completed' ELSE 'returned' END \"orders__status_group\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "orders.amount",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".AMOUNT \"orders__amount\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "orders.is_high_value",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".AMOUNT >= 1000 \"orders__is_high_value\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "orders.amount_bucket",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT FLOOR(\"orders\".AMOUNT / 250) * 250 \"orders__amount_bucket\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "orders.ordered_at",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CONVERT_TIMEZONE('UTC', \"orders\".ORDERED_AT::timestamp_tz)::timestamp_ntz \"orders__ordered_at\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ORDERED_AT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "orders.ordered_date",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CONVERT_TIMEZONE('UTC', DATE_TRUNC('day', \"orders\".ORDERED_AT)::TIMESTAMP_NTZ::timestamp_tz)::timestamp_ntz \"orders__ordered_date\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ORDERED_AT"
+  ]
+ },
+ {
+  "cube": "orders",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "orders.amount_unit",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders__amount_unit_values\".\"amount_unit\" \"orders__amount_unit\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nCROSS JOIN\n(\nSELECT 'units' as \"amount_unit\" UNION ALL\nSELECT 'thousands' as \"amount_unit\") AS \"orders__amount_unit_values\"\n\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": []
+ },
+ {
+  "cube": "pg_customers",
+  "type": "cube",
+  "kind": "measure",
+  "member": "pg_customers.count",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT CASE WHEN (\"pg_customers\".id) IS NOT NULL THEN 1 END \"pg_customers__count\" \nFROM  schema_b.customers  AS \"pg_customers\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_b.customers"
+  ],
+  "columns": [
+   "schema_b.customers.id"
+  ]
+ },
+ {
+  "cube": "pg_customers",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "pg_customers.id",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT \"pg_customers\".id \"pg_customers__id\" \nFROM  schema_b.customers  AS \"pg_customers\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_b.customers"
+  ],
+  "columns": [
+   "schema_b.customers.id"
+  ]
+ },
+ {
+  "cube": "pg_customers",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "pg_customers.full_name",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT \"pg_customers\".full_name \"pg_customers__full_name\" \nFROM  schema_b.customers  AS \"pg_customers\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_b.customers"
+  ],
+  "columns": [
+   "schema_b.customers.full_name"
+  ]
+ },
+ {
+  "cube": "pg_customers",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "pg_customers.region",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT \"pg_customers\".region \"pg_customers__region\" \nFROM  schema_b.customers  AS \"pg_customers\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_b.customers"
+  ],
+  "columns": [
+   "schema_b.customers.region"
+  ]
+ },
+ {
+  "cube": "pg_order_items",
+  "type": "cube",
+  "kind": "measure",
+  "member": "pg_order_items.count",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT CASE WHEN (\"pg_order_items\".order_id || '-' || \"pg_order_items\".item_id) IS NOT NULL THEN 1 END \"pg_order_items__count\" \nFROM  schema_a.order_items  AS \"pg_order_items\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_a.order_items"
+  ],
+  "columns": [
+   "schema_a.order_items.item_id",
+   "schema_a.order_items.order_id"
+  ]
+ },
+ {
+  "cube": "pg_order_items",
+  "type": "cube",
+  "kind": "measure",
+  "member": "pg_order_items.total_quantity",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT \"pg_order_items\".quantity \"pg_order_items__total_quantity\" \nFROM  schema_a.order_items  AS \"pg_order_items\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_a.order_items"
+  ],
+  "columns": [
+   "schema_a.order_items.quantity"
+  ]
+ },
+ {
+  "cube": "pg_order_items",
+  "type": "cube",
+  "kind": "measure",
+  "member": "pg_order_items.total_discount",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT \"pg_order_items\".discount \"pg_order_items__total_discount\" \nFROM  schema_a.order_items  AS \"pg_order_items\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_a.order_items"
+  ],
+  "columns": [
+   "schema_a.order_items.discount"
+  ]
+ },
+ {
+  "cube": "pg_order_items",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "pg_order_items.id",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT \"pg_order_items\".order_id || '-' || \"pg_order_items\".item_id \"pg_order_items__id\" \nFROM  schema_a.order_items  AS \"pg_order_items\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_a.order_items"
+  ],
+  "columns": [
+   "schema_a.order_items.item_id",
+   "schema_a.order_items.order_id"
+  ]
+ },
+ {
+  "cube": "pg_order_items",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "pg_order_items.order_id",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT \"pg_order_items\".order_id \"pg_order_items__order_id\" \nFROM  schema_a.order_items  AS \"pg_order_items\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_a.order_items"
+  ],
+  "columns": [
+   "schema_a.order_items.order_id"
+  ]
+ },
+ {
+  "cube": "pg_order_items",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "pg_order_items.product_id",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT \"pg_order_items\".product_id \"pg_order_items__product_id\" \nFROM  schema_a.order_items  AS \"pg_order_items\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "schema_a.order_items"
+  ],
+  "columns": [
+   "schema_a.order_items.product_id"
+  ]
+ },
+ {
+  "cube": "customer_360",
+  "type": "view",
+  "kind": "measure",
+  "member": "customer_360.count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"customers\".ID) IS NOT NULL THEN 1 END \"customer_360__count\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customer_360",
+  "type": "view",
+  "kind": "measure",
+  "member": "customer_360.orders_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"orders\".ID) IS NOT NULL THEN 1 END \"customer_360__orders_count\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nLEFT JOIN  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\" ON \"customers\".ID = \"orders\".CUSTOMER_ID\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customer_360",
+  "type": "view",
+  "kind": "measure",
+  "member": "customer_360.orders_revenue",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".AMOUNT \"customer_360__orders_revenue\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nLEFT JOIN  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\" ON \"customers\".ID = \"orders\".CUSTOMER_ID\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT",
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customer_360",
+  "type": "view",
+  "kind": "measure",
+  "member": "customer_360.orders_first_order_at",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT MIN(\"orders\".ORDERED_AT) \"customer_360__orders_first_order_at\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nLEFT JOIN  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\" ON \"customers\".ID = \"orders\".CUSTOMER_ID\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.ORDERED_AT",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customer_360",
+  "type": "view",
+  "kind": "measure",
+  "member": "customer_360.orders_new_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"orders\".STATUS = 'new') THEN \"orders\".ID END) IS NOT NULL THEN 1 END \"customer_360__orders_new_count\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nLEFT JOIN  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\" ON \"customers\".ID = \"orders\".CUSTOMER_ID\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customer_360",
+  "type": "view",
+  "kind": "measure",
+  "member": "customer_360.orders_paid_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"orders\".STATUS = 'paid') THEN \"orders\".ID END) IS NOT NULL THEN 1 END \"customer_360__orders_paid_count\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nLEFT JOIN  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\" ON \"customers\".ID = \"orders\".CUSTOMER_ID\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customer_360",
+  "type": "view",
+  "kind": "measure",
+  "member": "customer_360.orders_shipped_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"orders\".STATUS = 'shipped') THEN \"orders\".ID END) IS NOT NULL THEN 1 END \"customer_360__orders_shipped_count\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nLEFT JOIN  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\" ON \"customers\".ID = \"orders\".CUSTOMER_ID\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customer_360",
+  "type": "view",
+  "kind": "measure",
+  "member": "customer_360.orders_delivered_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"orders\".STATUS = 'delivered') THEN \"orders\".ID END) IS NOT NULL THEN 1 END \"customer_360__orders_delivered_count\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nLEFT JOIN  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\" ON \"customers\".ID = \"orders\".CUSTOMER_ID\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customer_360",
+  "type": "view",
+  "kind": "measure",
+  "member": "customer_360.orders_returned_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"orders\".STATUS = 'returned') THEN \"orders\".ID END) IS NOT NULL THEN 1 END \"customer_360__orders_returned_count\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nLEFT JOIN  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\" ON \"customers\".ID = \"orders\".CUSTOMER_ID\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customer_360",
+  "type": "view",
+  "kind": "dimension",
+  "member": "customer_360.id",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"customers\".ID \"customer_360__id\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customer_360",
+  "type": "view",
+  "kind": "dimension",
+  "member": "customer_360.full_name",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"customers\".FULL_NAME \"customer_360__full_name\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customer_360",
+  "type": "view",
+  "kind": "dimension",
+  "member": "customer_360.region",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"customers\".REGION \"customer_360__region\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customer_360",
+  "type": "view",
+  "kind": "dimension",
+  "member": "customer_360.lifetime_revenue",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"customers_lifetime_revenue_subquery\".\"lifetime_revenue\" \"customer_360__lifetime_revenue\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nLEFT JOIN (SELECT \"customers\".ID \"customers__id\", sum(\"orders\".AMOUNT) \"lifetime_revenue\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nLEFT JOIN  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\" ON \"customers\".ID = \"orders\".CUSTOMER_ID\nGROUP BY 1) AS \"customers_lifetime_revenue_subquery\" ON ((\"customers_lifetime_revenue_subquery\".\"customers__id\" = \"customers\".ID))\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT",
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customer_360",
+  "type": "view",
+  "kind": "dimension",
+  "member": "customer_360.lifetime_tier",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE\n  WHEN \"customers_lifetime_revenue_subquery\".\"lifetime_revenue\" >= 30000 THEN 'high'\n  WHEN \"customers_lifetime_revenue_subquery\".\"lifetime_revenue\" >= 10000 THEN 'medium'\n  ELSE 'low'\nEND\n \"customer_360__lifetime_tier\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nLEFT JOIN (SELECT \"customers\".ID \"customers__id\", sum(\"orders\".AMOUNT) \"lifetime_revenue\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nLEFT JOIN  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\" ON \"customers\".ID = \"orders\".CUSTOMER_ID\nGROUP BY 1) AS \"customers_lifetime_revenue_subquery\" ON ((\"customers_lifetime_revenue_subquery\".\"customers__id\" = \"customers\".ID))\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT",
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "events_internal",
+  "type": "view",
+  "kind": "measure",
+  "member": "events_internal.count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"events\".EVENT_ID) IS NOT NULL THEN 1 END \"events_internal__count\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "events_internal",
+  "type": "view",
+  "kind": "measure",
+  "member": "events_internal.purchase_amount",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"events\".AMOUNT \"events_internal__purchase_amount\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "events_internal",
+  "type": "view",
+  "kind": "measure",
+  "member": "events_internal.signup_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"events\".EVENT_NAME = 'signup') THEN \"events\".EVENT_ID END) IS NOT NULL THEN 1 END \"events_internal__signup_count\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "events_internal",
+  "type": "view",
+  "kind": "measure",
+  "member": "events_internal.login_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"events\".EVENT_NAME = 'login') THEN \"events\".EVENT_ID END) IS NOT NULL THEN 1 END \"events_internal__login_count\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "events_internal",
+  "type": "view",
+  "kind": "measure",
+  "member": "events_internal.purchase_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"events\".EVENT_NAME = 'purchase') THEN \"events\".EVENT_ID END) IS NOT NULL THEN 1 END \"events_internal__purchase_count\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "events_internal",
+  "type": "view",
+  "kind": "measure",
+  "member": "events_internal.signup_to_purchase_rate",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT 1.0 * CASE WHEN (CASE WHEN (\"events\".EVENT_NAME = 'purchase') THEN \"events\".EVENT_ID END) IS NOT NULL THEN 1 END / NULLIF(CASE WHEN (CASE WHEN (\"events\".EVENT_NAME = 'signup') THEN \"events\".EVENT_ID END) IS NOT NULL THEN 1 END, 0) \"events_internal__signup_to_purchase_rate\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "events_internal",
+  "type": "view",
+  "kind": "dimension",
+  "member": "events_internal.id",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"events\".EVENT_ID \"events_internal__id\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "events_internal",
+  "type": "view",
+  "kind": "dimension",
+  "member": "events_internal.name",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"events\".EVENT_NAME \"events_internal__name\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "events_internal",
+  "type": "view",
+  "kind": "dimension",
+  "member": "events_internal.event_at",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CONVERT_TIMEZONE('UTC', \"events\".EVENT_TS::timestamp_tz)::timestamp_ntz \"events_internal__event_at\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "events_internal",
+  "type": "view",
+  "kind": "dimension",
+  "member": "events_internal.device",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"events\".PAYLOAD_DEVICE \"events_internal__device\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "events_internal",
+  "type": "view",
+  "kind": "dimension",
+  "member": "events_internal.plan",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"events\".PAYLOAD_PLAN \"events_internal__plan\" \nFROM  (SELECT\n  e.EVENT_ID,\n  e.EVENT_NAME,\n  e.EVENT_TS,\n  e.PAYLOAD:device::STRING AS PAYLOAD_DEVICE,\n  e.PAYLOAD:plan::STRING AS PAYLOAD_PLAN,\n  e.PAYLOAD:amount::NUMBER(10,2) AS AMOUNT\nFROM DWH_TESTING.PIPELINES.EVENTS_RAW AS e WHERE 1 = 1\n)  AS \"events\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW"
+  ],
+  "columns": [
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_ID",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_NAME",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.EVENT_TS",
+   "DWH_TESTING.PIPELINES.EVENTS_RAW.PAYLOAD"
+  ]
+ },
+ {
+  "cube": "calendar",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "calendar.date",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CONVERT_TIMEZONE('UTC', \"calendar\".CALENDAR_DATE::timestamp_tz)::timestamp_ntz \"calendar__date\" \nFROM  (SELECT\n  d.CALENDAR_DATE,\n  DATE_TRUNC('month', d.CALENDAR_DATE) AS MONTH_START,\n  DATEADD('month', 1, DATE_TRUNC('quarter', DATEADD('month', -1, d.CALENDAR_DATE))) AS FISCAL_QUARTER_START,\n  DATEADD('month', 1, DATE_TRUNC('year', DATEADD('month', -1, d.CALENDAR_DATE))) AS FISCAL_YEAR_START,\n  YEAR(DATEADD('month', -1, d.CALENDAR_DATE)) AS FISCAL_YEAR,\n  DATEADD('year', -1, d.CALENDAR_DATE) AS PRIOR_FISCAL_YEAR_DATE,\n  DATEADD('month', -1, d.CALENDAR_DATE) AS PRIOR_MONTH_DATE,\n  DAYNAME(d.CALENDAR_DATE) AS DAY_NAME,\n  DAYOFWEEKISO(d.CALENDAR_DATE) >= 6 AS IS_WEEKEND\nFROM (\n  SELECT DATEADD('day', ROW_NUMBER() OVER (ORDER BY SEQ4()) - 1, '2024-01-01'::TIMESTAMP_NTZ) AS CALENDAR_DATE\n  FROM TABLE(GENERATOR(ROWCOUNT => 1461))\n) AS d\n)  AS \"calendar\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [],
+  "columns": []
+ },
+ {
+  "cube": "calendar",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "calendar.fiscal_year",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"calendar\".FISCAL_YEAR \"calendar__fiscal_year\" \nFROM  (SELECT\n  d.CALENDAR_DATE,\n  DATE_TRUNC('month', d.CALENDAR_DATE) AS MONTH_START,\n  DATEADD('month', 1, DATE_TRUNC('quarter', DATEADD('month', -1, d.CALENDAR_DATE))) AS FISCAL_QUARTER_START,\n  DATEADD('month', 1, DATE_TRUNC('year', DATEADD('month', -1, d.CALENDAR_DATE))) AS FISCAL_YEAR_START,\n  YEAR(DATEADD('month', -1, d.CALENDAR_DATE)) AS FISCAL_YEAR,\n  DATEADD('year', -1, d.CALENDAR_DATE) AS PRIOR_FISCAL_YEAR_DATE,\n  DATEADD('month', -1, d.CALENDAR_DATE) AS PRIOR_MONTH_DATE,\n  DAYNAME(d.CALENDAR_DATE) AS DAY_NAME,\n  DAYOFWEEKISO(d.CALENDAR_DATE) >= 6 AS IS_WEEKEND\nFROM (\n  SELECT DATEADD('day', ROW_NUMBER() OVER (ORDER BY SEQ4()) - 1, '2024-01-01'::TIMESTAMP_NTZ) AS CALENDAR_DATE\n  FROM TABLE(GENERATOR(ROWCOUNT => 1461))\n) AS d\n)  AS \"calendar\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [],
+  "columns": []
+ },
+ {
+  "cube": "calendar",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "calendar.day_name",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"calendar\".DAY_NAME \"calendar__day_name\" \nFROM  (SELECT\n  d.CALENDAR_DATE,\n  DATE_TRUNC('month', d.CALENDAR_DATE) AS MONTH_START,\n  DATEADD('month', 1, DATE_TRUNC('quarter', DATEADD('month', -1, d.CALENDAR_DATE))) AS FISCAL_QUARTER_START,\n  DATEADD('month', 1, DATE_TRUNC('year', DATEADD('month', -1, d.CALENDAR_DATE))) AS FISCAL_YEAR_START,\n  YEAR(DATEADD('month', -1, d.CALENDAR_DATE)) AS FISCAL_YEAR,\n  DATEADD('year', -1, d.CALENDAR_DATE) AS PRIOR_FISCAL_YEAR_DATE,\n  DATEADD('month', -1, d.CALENDAR_DATE) AS PRIOR_MONTH_DATE,\n  DAYNAME(d.CALENDAR_DATE) AS DAY_NAME,\n  DAYOFWEEKISO(d.CALENDAR_DATE) >= 6 AS IS_WEEKEND\nFROM (\n  SELECT DATEADD('day', ROW_NUMBER() OVER (ORDER BY SEQ4()) - 1, '2024-01-01'::TIMESTAMP_NTZ) AS CALENDAR_DATE\n  FROM TABLE(GENERATOR(ROWCOUNT => 1461))\n) AS d\n)  AS \"calendar\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [],
+  "columns": []
+ },
+ {
+  "cube": "calendar",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "calendar.is_weekend",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"calendar\".IS_WEEKEND \"calendar__is_weekend\" \nFROM  (SELECT\n  d.CALENDAR_DATE,\n  DATE_TRUNC('month', d.CALENDAR_DATE) AS MONTH_START,\n  DATEADD('month', 1, DATE_TRUNC('quarter', DATEADD('month', -1, d.CALENDAR_DATE))) AS FISCAL_QUARTER_START,\n  DATEADD('month', 1, DATE_TRUNC('year', DATEADD('month', -1, d.CALENDAR_DATE))) AS FISCAL_YEAR_START,\n  YEAR(DATEADD('month', -1, d.CALENDAR_DATE)) AS FISCAL_YEAR,\n  DATEADD('year', -1, d.CALENDAR_DATE) AS PRIOR_FISCAL_YEAR_DATE,\n  DATEADD('month', -1, d.CALENDAR_DATE) AS PRIOR_MONTH_DATE,\n  DAYNAME(d.CALENDAR_DATE) AS DAY_NAME,\n  DAYOFWEEKISO(d.CALENDAR_DATE) >= 6 AS IS_WEEKEND\nFROM (\n  SELECT DATEADD('day', ROW_NUMBER() OVER (ORDER BY SEQ4()) - 1, '2024-01-01'::TIMESTAMP_NTZ) AS CALENDAR_DATE\n  FROM TABLE(GENERATOR(ROWCOUNT => 1461))\n) AS d\n)  AS \"calendar\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [],
+  "columns": []
+ },
+ {
+  "cube": "customers",
+  "type": "cube",
+  "kind": "measure",
+  "member": "customers.count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"customers\".ID) IS NOT NULL THEN 1 END \"customers__count\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customers",
+  "type": "cube",
+  "kind": "measure",
+  "member": "customers.region_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"customers\".REGION) IS NOT NULL THEN 1 END \"customers__region_count\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customers",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "customers.id",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"customers\".ID \"customers__id\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customers",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "customers.email",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"customers\".EMAIL \"customers__email\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customers",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "customers.email_domain",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT SPLIT_PART(\"customers\".EMAIL, '@', 2) \"customers__email_domain\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customers",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "customers.full_name",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"customers\".FULL_NAME \"customers__full_name\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customers",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "customers.region",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"customers\".REGION \"customers__region\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customers",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "customers.region_location",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"customers\".REGION_LAT || ',' || \"customers\".REGION_LON \"customers__region_location\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customers",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "customers.is_emea",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"customers\".REGION = 'EU' \"customers__is_emea\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customers",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "customers.lifetime_revenue",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"customers_lifetime_revenue_subquery\".\"lifetime_revenue\" \"customers__lifetime_revenue\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nLEFT JOIN (SELECT \"customers\".ID \"customers__id\", sum(\"orders\".AMOUNT) \"lifetime_revenue\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nLEFT JOIN  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\" ON \"customers\".ID = \"orders\".CUSTOMER_ID\nGROUP BY 1) AS \"customers_lifetime_revenue_subquery\" ON ((\"customers_lifetime_revenue_subquery\".\"customers__id\" = \"customers\".ID))\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT",
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "customers",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "customers.lifetime_tier",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE\n  WHEN \"customers_lifetime_revenue_subquery\".\"lifetime_revenue\" >= 30000 THEN 'high'\n  WHEN \"customers_lifetime_revenue_subquery\".\"lifetime_revenue\" >= 10000 THEN 'medium'\n  ELSE 'low'\nEND\n \"customers__lifetime_tier\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nLEFT JOIN (SELECT \"customers\".ID \"customers__id\", sum(\"orders\".AMOUNT) \"lifetime_revenue\" \nFROM  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\"\nLEFT JOIN  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\" ON \"customers\".ID = \"orders\".CUSTOMER_ID\nGROUP BY 1) AS \"customers_lifetime_revenue_subquery\" ON ((\"customers_lifetime_revenue_subquery\".\"customers__id\" = \"customers\".ID))\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT",
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "products_snapshot_extended",
+  "type": "cube",
+  "kind": "measure",
+  "member": "products_snapshot_extended.count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"products_snapshot_extended\".ID) IS NOT NULL THEN 1 END \"products_snapshot_extended__count\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE  AS \"products_snapshot_extended\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.ID"
+  ]
+ },
+ {
+  "cube": "products_snapshot_extended",
+  "type": "cube",
+  "kind": "measure",
+  "member": "products_snapshot_extended.active_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"products_snapshot_extended\".IS_ACTIVE) THEN \"products_snapshot_extended\".ID END) IS NOT NULL THEN 1 END \"products_snapshot_extended__active_count\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE  AS \"products_snapshot_extended\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.IS_ACTIVE"
+  ]
+ },
+ {
+  "cube": "products_snapshot_extended",
+  "type": "cube",
+  "kind": "measure",
+  "member": "products_snapshot_extended.avg_price",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products_snapshot_extended\".PRICE \"products_snapshot_extended__avg_price\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE  AS \"products_snapshot_extended\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.PRICE"
+  ]
+ },
+ {
+  "cube": "products_snapshot_extended",
+  "type": "cube",
+  "kind": "measure",
+  "member": "products_snapshot_extended.min_price",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products_snapshot_extended\".PRICE \"products_snapshot_extended__min_price\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE  AS \"products_snapshot_extended\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.PRICE"
+  ]
+ },
+ {
+  "cube": "products_snapshot_extended",
+  "type": "cube",
+  "kind": "measure",
+  "member": "products_snapshot_extended.max_price",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products_snapshot_extended\".PRICE \"products_snapshot_extended__max_price\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE  AS \"products_snapshot_extended\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.PRICE"
+  ]
+ },
+ {
+  "cube": "products_snapshot_extended",
+  "type": "cube",
+  "kind": "measure",
+  "member": "products_snapshot_extended.stock_quantity",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products_snapshot_extended\".QUANTITY \"products_snapshot_extended__stock_quantity\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE  AS \"products_snapshot_extended\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.QUANTITY"
+  ]
+ },
+ {
+  "cube": "products_snapshot_extended",
+  "type": "cube",
+  "kind": "measure",
+  "member": "products_snapshot_extended.stock_value",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products_snapshot_extended\".PRICE * \"products_snapshot_extended\".QUANTITY \"products_snapshot_extended__stock_value\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE  AS \"products_snapshot_extended\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.PRICE",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.QUANTITY"
+  ]
+ },
+ {
+  "cube": "products_snapshot_extended",
+  "type": "cube",
+  "kind": "measure",
+  "member": "products_snapshot_extended.active_ratio",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT 1.0 * CASE WHEN (CASE WHEN (\"products_snapshot_extended\".IS_ACTIVE) THEN \"products_snapshot_extended\".ID END) IS NOT NULL THEN 1 END / NULLIF(CASE WHEN (\"products_snapshot_extended\".ID) IS NOT NULL THEN 1 END, 0) \"products_snapshot_extended__active_ratio\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE  AS \"products_snapshot_extended\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.IS_ACTIVE"
+  ]
+ },
+ {
+  "cube": "products_snapshot_extended",
+  "type": "cube",
+  "kind": "measure",
+  "member": "products_snapshot_extended.total_weight",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products_snapshot_extended\".WEIGHT \"products_snapshot_extended__total_weight\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE  AS \"products_snapshot_extended\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.WEIGHT"
+  ]
+ },
+ {
+  "cube": "products_snapshot_extended",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "products_snapshot_extended.id",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products_snapshot_extended\".ID \"products_snapshot_extended__id\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE  AS \"products_snapshot_extended\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.ID"
+  ]
+ },
+ {
+  "cube": "products_snapshot_extended",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "products_snapshot_extended.name",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products_snapshot_extended\".NAME \"products_snapshot_extended__name\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE  AS \"products_snapshot_extended\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.NAME"
+  ]
+ },
+ {
+  "cube": "products_snapshot_extended",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "products_snapshot_extended.category",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products_snapshot_extended\".CATEGORY \"products_snapshot_extended__category\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE  AS \"products_snapshot_extended\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.CATEGORY"
+  ]
+ },
+ {
+  "cube": "products_snapshot_extended",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "products_snapshot_extended.sku",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT TRIM(\"products_snapshot_extended\".SKU) \"products_snapshot_extended__sku\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE  AS \"products_snapshot_extended\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.SKU"
+  ]
+ },
+ {
+  "cube": "products_snapshot_extended",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "products_snapshot_extended.is_active",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products_snapshot_extended\".IS_ACTIVE \"products_snapshot_extended__is_active\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE  AS \"products_snapshot_extended\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.IS_ACTIVE"
+  ]
+ },
+ {
+  "cube": "products_snapshot_extended",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "products_snapshot_extended.price",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products_snapshot_extended\".PRICE \"products_snapshot_extended__price\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE  AS \"products_snapshot_extended\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.PRICE"
+  ]
+ },
+ {
+  "cube": "products_snapshot_extended",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "products_snapshot_extended.price_band",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE\n  WHEN \"products_snapshot_extended\".PRICE < 10 THEN 'budget'\n  WHEN \"products_snapshot_extended\".PRICE < 30 THEN 'standard'\n  ELSE 'premium'\nEND\n \"products_snapshot_extended__price_band\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE  AS \"products_snapshot_extended\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.PRICE"
+  ]
+ },
+ {
+  "cube": "products_snapshot_extended",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "products_snapshot_extended.created_at",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CONVERT_TIMEZONE('UTC', \"products_snapshot_extended\".CREATED_AT::timestamp_tz)::timestamp_ntz \"products_snapshot_extended__created_at\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE  AS \"products_snapshot_extended\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.CREATED_AT"
+  ]
+ },
+ {
+  "cube": "products_snapshot_extended",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "products_snapshot_extended.product_page",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT 'https://example.com/products/' || \"products_snapshot_extended\".ID \"products_snapshot_extended__product_page\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE  AS \"products_snapshot_extended\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.ID"
+  ]
+ },
+ {
+  "cube": "order_items",
+  "type": "cube",
+  "kind": "measure",
+  "member": "order_items.count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"order_items\".ORDER_ID || '-' || \"order_items\".ITEM_ID) IS NOT NULL THEN 1 END \"order_items__count\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.ITEM_ID",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.ORDER_ID"
+  ]
+ },
+ {
+  "cube": "order_items",
+  "type": "cube",
+  "kind": "measure",
+  "member": "order_items.quantity_sold",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"order_items\".QUANTITY \"order_items__quantity_sold\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.QUANTITY"
+  ]
+ },
+ {
+  "cube": "order_items",
+  "type": "cube",
+  "kind": "measure",
+  "member": "order_items.gross_amount",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"order_items\".QUANTITY * \"order_items\".UNIT_PRICE \"order_items__gross_amount\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.QUANTITY",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.UNIT_PRICE"
+  ]
+ },
+ {
+  "cube": "order_items",
+  "type": "cube",
+  "kind": "measure",
+  "member": "order_items.discount_amount",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"order_items\".DISCOUNT \"order_items__discount_amount\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.DISCOUNT"
+  ]
+ },
+ {
+  "cube": "order_items",
+  "type": "cube",
+  "kind": "measure",
+  "member": "order_items.net_amount",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT (\"order_items\".QUANTITY * \"order_items\".UNIT_PRICE) - \"order_items\".DISCOUNT \"order_items__net_amount\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.DISCOUNT",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.QUANTITY",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.UNIT_PRICE"
+  ]
+ },
+ {
+  "cube": "order_items",
+  "type": "cube",
+  "kind": "measure",
+  "member": "order_items.discounted_items",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"order_items\".DISCOUNT > 0) THEN \"order_items\".ORDER_ID || '-' || \"order_items\".ITEM_ID END) IS NOT NULL THEN 1 END \"order_items__discounted_items\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.DISCOUNT",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.ITEM_ID",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.ORDER_ID"
+  ]
+ },
+ {
+  "cube": "order_items",
+  "type": "cube",
+  "kind": "measure",
+  "member": "order_items.products_sold",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"order_items\".PRODUCT_ID) IS NOT NULL THEN 1 END \"order_items__products_sold\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.PRODUCT_ID"
+  ]
+ },
+ {
+  "cube": "order_items",
+  "type": "cube",
+  "kind": "measure",
+  "member": "order_items.products_sold_approx",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"order_items\".PRODUCT_ID) IS NOT NULL THEN 1 END \"order_items__products_sold_approx\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.PRODUCT_ID"
+  ]
+ },
+ {
+  "cube": "order_items",
+  "type": "cube",
+  "kind": "measure",
+  "member": "order_items.avg_unit_price",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"order_items\".UNIT_PRICE \"order_items__avg_unit_price\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.UNIT_PRICE"
+  ]
+ },
+ {
+  "cube": "order_items",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "order_items.id",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"order_items\".ORDER_ID || '-' || \"order_items\".ITEM_ID \"order_items__id\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.ITEM_ID",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.ORDER_ID"
+  ]
+ },
+ {
+  "cube": "order_items",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "order_items.order_id",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"order_items\".ORDER_ID \"order_items__order_id\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.ORDER_ID"
+  ]
+ },
+ {
+  "cube": "order_items",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "order_items.product_id",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"order_items\".PRODUCT_ID \"order_items__product_id\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.PRODUCT_ID"
+  ]
+ },
+ {
+  "cube": "order_items",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "order_items.quantity",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"order_items\".QUANTITY \"order_items__quantity\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.QUANTITY"
+  ]
+ },
+ {
+  "cube": "order_items",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "order_items.unit_price",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"order_items\".UNIT_PRICE \"order_items__unit_price\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.UNIT_PRICE"
+  ]
+ },
+ {
+  "cube": "order_items",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "order_items.has_discount",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"order_items\".DISCOUNT > 0 \"order_items__has_discount\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.DISCOUNT"
+  ]
+ },
+ {
+  "cube": "pg_orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "pg_orders.count",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT CASE WHEN (\"pg_orders\".id) IS NOT NULL THEN 1 END \"pg_orders__count\" \nFROM  recon_demo.orders  AS \"pg_orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "recon_demo.orders"
+  ],
+  "columns": [
+   "recon_demo.orders.id"
+  ]
+ },
+ {
+  "cube": "pg_orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "pg_orders.revenue",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT \"pg_orders\".amount \"pg_orders__revenue\" \nFROM  recon_demo.orders  AS \"pg_orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "recon_demo.orders"
+  ],
+  "columns": [
+   "recon_demo.orders.amount"
+  ]
+ },
+ {
+  "cube": "pg_orders",
+  "type": "cube",
+  "kind": "measure",
+  "member": "pg_orders.p90_amount",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY \"pg_orders\".amount) \"pg_orders__p90_amount\" \nFROM  recon_demo.orders  AS \"pg_orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "recon_demo.orders"
+  ],
+  "columns": [
+   "recon_demo.orders.amount"
+  ]
+ },
+ {
+  "cube": "pg_orders",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "pg_orders.id",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT \"pg_orders\".id \"pg_orders__id\" \nFROM  recon_demo.orders  AS \"pg_orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "recon_demo.orders"
+  ],
+  "columns": [
+   "recon_demo.orders.id"
+  ]
+ },
+ {
+  "cube": "pg_orders",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "pg_orders.status",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT \"pg_orders\".status \"pg_orders__status\" \nFROM  recon_demo.orders  AS \"pg_orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "recon_demo.orders"
+  ],
+  "columns": [
+   "recon_demo.orders.status"
+  ]
+ },
+ {
+  "cube": "pg_orders",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "pg_orders.ordered_at",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT (\"pg_orders\".ordered_at::timestamptz AT TIME ZONE 'UTC') \"pg_orders__ordered_at\" \nFROM  recon_demo.orders  AS \"pg_orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "recon_demo.orders"
+  ],
+  "columns": [
+   "recon_demo.orders.ordered_at"
+  ]
+ },
+ {
+  "cube": "pg_orders",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "pg_orders.order_hour",
+  "mode": "ungrouped",
+  "data_source": "postgres",
+  "sql": "SELECT EXTRACT(HOUR FROM \"pg_orders\".ordered_at AT TIME ZONE 'UTC') \"pg_orders__order_hour\" \nFROM  recon_demo.orders  AS \"pg_orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "recon_demo.orders"
+  ],
+  "columns": [
+   "recon_demo.orders.ordered_at"
+  ]
+ },
+ {
+  "cube": "ch_order_item_facts",
+  "type": "cube",
+  "kind": "measure",
+  "member": "ch_order_item_facts.count",
+  "mode": "ungrouped",
+  "data_source": "clickhouse",
+  "sql": "SELECT CASE WHEN (concat(toString(`ch_order_item_facts`.order_id), '-', toString(`ch_order_item_facts`.item_id))) IS NOT NULL THEN 1 END `ch_order_item_facts__count` \nFROM  synq_test.order_item_facts  AS `ch_order_item_facts`\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "synq_test.order_item_facts"
+  ],
+  "columns": [
+   "synq_test.order_item_facts.item_id",
+   "synq_test.order_item_facts.order_id"
+  ]
+ },
+ {
+  "cube": "ch_order_item_facts",
+  "type": "cube",
+  "kind": "measure",
+  "member": "ch_order_item_facts.line_amount",
+  "mode": "ungrouped",
+  "data_source": "clickhouse",
+  "sql": "SELECT `ch_order_item_facts`.line_amount `ch_order_item_facts__line_amount` \nFROM  synq_test.order_item_facts  AS `ch_order_item_facts`\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "synq_test.order_item_facts"
+  ],
+  "columns": [
+   "synq_test.order_item_facts.line_amount"
+  ]
+ },
+ {
+  "cube": "ch_order_item_facts",
+  "type": "cube",
+  "kind": "measure",
+  "member": "ch_order_item_facts.orders",
+  "mode": "ungrouped",
+  "data_source": "clickhouse",
+  "sql": "SELECT CASE WHEN (`ch_order_item_facts`.order_id) IS NOT NULL THEN 1 END `ch_order_item_facts__orders` \nFROM  synq_test.order_item_facts  AS `ch_order_item_facts`\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "synq_test.order_item_facts"
+  ],
+  "columns": [
+   "synq_test.order_item_facts.order_id"
+  ]
+ },
+ {
+  "cube": "ch_order_item_facts",
+  "type": "cube",
+  "kind": "measure",
+  "member": "ch_order_item_facts.orders_approx",
+  "mode": "ungrouped",
+  "data_source": "clickhouse",
+  "sql": "SELECT CASE WHEN (`ch_order_item_facts`.order_id) IS NOT NULL THEN 1 END `ch_order_item_facts__orders_approx` \nFROM  synq_test.order_item_facts  AS `ch_order_item_facts`\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "synq_test.order_item_facts"
+  ],
+  "columns": [
+   "synq_test.order_item_facts.order_id"
+  ]
+ },
+ {
+  "cube": "ch_order_item_facts",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "ch_order_item_facts.id",
+  "mode": "ungrouped",
+  "data_source": "clickhouse",
+  "sql": "SELECT concat(toString(`ch_order_item_facts`.order_id), '-', toString(`ch_order_item_facts`.item_id)) `ch_order_item_facts__id` \nFROM  synq_test.order_item_facts  AS `ch_order_item_facts`\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "synq_test.order_item_facts"
+  ],
+  "columns": [
+   "synq_test.order_item_facts.item_id",
+   "synq_test.order_item_facts.order_id"
+  ]
+ },
+ {
+  "cube": "ch_order_item_facts",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "ch_order_item_facts.product_name",
+  "mode": "ungrouped",
+  "data_source": "clickhouse",
+  "sql": "SELECT `ch_order_item_facts`.product_name `ch_order_item_facts__product_name` \nFROM  synq_test.order_item_facts  AS `ch_order_item_facts`\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "synq_test.order_item_facts"
+  ],
+  "columns": [
+   "synq_test.order_item_facts.product_name"
+  ]
+ },
+ {
+  "cube": "ch_order_item_facts",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "ch_order_item_facts.category",
+  "mode": "ungrouped",
+  "data_source": "clickhouse",
+  "sql": "SELECT `ch_order_item_facts`.category `ch_order_item_facts__category` \nFROM  synq_test.order_item_facts  AS `ch_order_item_facts`\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "synq_test.order_item_facts"
+  ],
+  "columns": [
+   "synq_test.order_item_facts.category"
+  ]
+ },
+ {
+  "cube": "ch_order_item_facts",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "ch_order_item_facts.loaded_at",
+  "mode": "ungrouped",
+  "data_source": "clickhouse",
+  "sql": "SELECT toTimeZone(toDateTime64(`ch_order_item_facts`.loaded_at, 6), 'UTC') `ch_order_item_facts__loaded_at` \nFROM  synq_test.order_item_facts  AS `ch_order_item_facts`\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "synq_test.order_item_facts"
+  ],
+  "columns": [
+   "synq_test.order_item_facts.loaded_at"
+  ]
+ },
+ {
+  "cube": "bq_events",
+  "type": "cube",
+  "kind": "measure",
+  "member": "bq_events.count",
+  "mode": "ungrouped",
+  "data_source": "bigquery",
+  "sql": "SELECT CASE WHEN (`bq_events`.event_id) IS NOT NULL THEN 1 END `bq_events__count` \nFROM  (SELECT\n  event_id,\n  event_ts,\n  event_name,\n  JSON_VALUE(payload, '$.plan') AS plan,\n  SAFE_CAST(JSON_VALUE(payload, '$.amount') AS NUMERIC) AS amount\nFROM synq_dwhtesting.events_hourly\n)  AS `bq_events`\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "synq_dwhtesting.events_hourly"
+  ],
+  "columns": [
+   "synq_dwhtesting.events_hourly.event_id",
+   "synq_dwhtesting.events_hourly.event_name",
+   "synq_dwhtesting.events_hourly.event_ts",
+   "synq_dwhtesting.events_hourly.payload"
+  ]
+ },
+ {
+  "cube": "bq_events",
+  "type": "cube",
+  "kind": "measure",
+  "member": "bq_events.amount",
+  "mode": "ungrouped",
+  "data_source": "bigquery",
+  "sql": "SELECT `bq_events`.amount `bq_events__amount` \nFROM  (SELECT\n  event_id,\n  event_ts,\n  event_name,\n  JSON_VALUE(payload, '$.plan') AS plan,\n  SAFE_CAST(JSON_VALUE(payload, '$.amount') AS NUMERIC) AS amount\nFROM synq_dwhtesting.events_hourly\n)  AS `bq_events`\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "synq_dwhtesting.events_hourly"
+  ],
+  "columns": [
+   "synq_dwhtesting.events_hourly.event_id",
+   "synq_dwhtesting.events_hourly.event_name",
+   "synq_dwhtesting.events_hourly.event_ts",
+   "synq_dwhtesting.events_hourly.payload"
+  ]
+ },
+ {
+  "cube": "bq_events",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "bq_events.id",
+  "mode": "ungrouped",
+  "data_source": "bigquery",
+  "sql": "SELECT `bq_events`.event_id `bq_events__id` \nFROM  (SELECT\n  event_id,\n  event_ts,\n  event_name,\n  JSON_VALUE(payload, '$.plan') AS plan,\n  SAFE_CAST(JSON_VALUE(payload, '$.amount') AS NUMERIC) AS amount\nFROM synq_dwhtesting.events_hourly\n)  AS `bq_events`\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "synq_dwhtesting.events_hourly"
+  ],
+  "columns": [
+   "synq_dwhtesting.events_hourly.event_id",
+   "synq_dwhtesting.events_hourly.event_name",
+   "synq_dwhtesting.events_hourly.event_ts",
+   "synq_dwhtesting.events_hourly.payload"
+  ]
+ },
+ {
+  "cube": "bq_events",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "bq_events.name",
+  "mode": "ungrouped",
+  "data_source": "bigquery",
+  "sql": "SELECT `bq_events`.event_name `bq_events__name` \nFROM  (SELECT\n  event_id,\n  event_ts,\n  event_name,\n  JSON_VALUE(payload, '$.plan') AS plan,\n  SAFE_CAST(JSON_VALUE(payload, '$.amount') AS NUMERIC) AS amount\nFROM synq_dwhtesting.events_hourly\n)  AS `bq_events`\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "synq_dwhtesting.events_hourly"
+  ],
+  "columns": [
+   "synq_dwhtesting.events_hourly.event_id",
+   "synq_dwhtesting.events_hourly.event_name",
+   "synq_dwhtesting.events_hourly.event_ts",
+   "synq_dwhtesting.events_hourly.payload"
+  ]
+ },
+ {
+  "cube": "bq_events",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "bq_events.plan",
+  "mode": "ungrouped",
+  "data_source": "bigquery",
+  "sql": "SELECT `bq_events`.plan `bq_events__plan` \nFROM  (SELECT\n  event_id,\n  event_ts,\n  event_name,\n  JSON_VALUE(payload, '$.plan') AS plan,\n  SAFE_CAST(JSON_VALUE(payload, '$.amount') AS NUMERIC) AS amount\nFROM synq_dwhtesting.events_hourly\n)  AS `bq_events`\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "synq_dwhtesting.events_hourly"
+  ],
+  "columns": [
+   "synq_dwhtesting.events_hourly.event_id",
+   "synq_dwhtesting.events_hourly.event_name",
+   "synq_dwhtesting.events_hourly.event_ts",
+   "synq_dwhtesting.events_hourly.payload"
+  ]
+ },
+ {
+  "cube": "bq_events",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "bq_events.event_at",
+  "mode": "ungrouped",
+  "data_source": "bigquery",
+  "sql": "SELECT TIMESTAMP(DATETIME(`bq_events`.event_ts, 'UTC')) `bq_events__event_at` \nFROM  (SELECT\n  event_id,\n  event_ts,\n  event_name,\n  JSON_VALUE(payload, '$.plan') AS plan,\n  SAFE_CAST(JSON_VALUE(payload, '$.amount') AS NUMERIC) AS amount\nFROM synq_dwhtesting.events_hourly\n)  AS `bq_events`\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "synq_dwhtesting.events_hourly"
+  ],
+  "columns": [
+   "synq_dwhtesting.events_hourly.event_id",
+   "synq_dwhtesting.events_hourly.event_name",
+   "synq_dwhtesting.events_hourly.event_ts",
+   "synq_dwhtesting.events_hourly.payload"
+  ]
+ },
+ {
+  "cube": "products",
+  "type": "cube",
+  "kind": "measure",
+  "member": "products.count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"products\".ID) IS NOT NULL THEN 1 END \"products__count\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.ID"
+  ]
+ },
+ {
+  "cube": "products",
+  "type": "cube",
+  "kind": "measure",
+  "member": "products.active_count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (CASE WHEN (\"products\".IS_ACTIVE) THEN \"products\".ID END) IS NOT NULL THEN 1 END \"products__active_count\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.IS_ACTIVE"
+  ]
+ },
+ {
+  "cube": "products",
+  "type": "cube",
+  "kind": "measure",
+  "member": "products.avg_price",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products\".PRICE \"products__avg_price\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.PRICE"
+  ]
+ },
+ {
+  "cube": "products",
+  "type": "cube",
+  "kind": "measure",
+  "member": "products.min_price",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products\".PRICE \"products__min_price\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.PRICE"
+  ]
+ },
+ {
+  "cube": "products",
+  "type": "cube",
+  "kind": "measure",
+  "member": "products.max_price",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products\".PRICE \"products__max_price\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.PRICE"
+  ]
+ },
+ {
+  "cube": "products",
+  "type": "cube",
+  "kind": "measure",
+  "member": "products.stock_quantity",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products\".QUANTITY \"products__stock_quantity\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.QUANTITY"
+  ]
+ },
+ {
+  "cube": "products",
+  "type": "cube",
+  "kind": "measure",
+  "member": "products.stock_value",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products\".PRICE * \"products\".QUANTITY \"products__stock_value\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.PRICE",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.QUANTITY"
+  ]
+ },
+ {
+  "cube": "products",
+  "type": "cube",
+  "kind": "measure",
+  "member": "products.active_ratio",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT 1.0 * CASE WHEN (CASE WHEN (\"products\".IS_ACTIVE) THEN \"products\".ID END) IS NOT NULL THEN 1 END / NULLIF(CASE WHEN (\"products\".ID) IS NOT NULL THEN 1 END, 0) \"products__active_ratio\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.IS_ACTIVE"
+  ]
+ },
+ {
+  "cube": "products",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "products.id",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products\".ID \"products__id\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.ID"
+  ]
+ },
+ {
+  "cube": "products",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "products.name",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products\".NAME \"products__name\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.NAME"
+  ]
+ },
+ {
+  "cube": "products",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "products.category",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products\".CATEGORY \"products__category\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.CATEGORY"
+  ]
+ },
+ {
+  "cube": "products",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "products.sku",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT TRIM(\"products\".SKU) \"products__sku\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.SKU"
+  ]
+ },
+ {
+  "cube": "products",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "products.is_active",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products\".IS_ACTIVE \"products__is_active\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.IS_ACTIVE"
+  ]
+ },
+ {
+  "cube": "products",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "products.price",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products\".PRICE \"products__price\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.PRICE"
+  ]
+ },
+ {
+  "cube": "products",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "products.price_band",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE\n  WHEN \"products\".PRICE < 10 THEN 'budget'\n  WHEN \"products\".PRICE < 30 THEN 'standard'\n  ELSE 'premium'\nEND\n \"products__price_band\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.PRICE"
+  ]
+ },
+ {
+  "cube": "products",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "products.created_at",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CONVERT_TIMEZONE('UTC', \"products\".CREATED_AT::timestamp_tz)::timestamp_ntz \"products__created_at\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.CREATED_AT"
+  ]
+ },
+ {
+  "cube": "products",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "products.product_page",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT 'https://example.com/products/' || \"products\".ID \"products__product_page\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.ID"
+  ]
+ },
+ {
+  "cube": "product_snapshots",
+  "type": "cube",
+  "kind": "measure",
+  "member": "product_snapshots.snapshot_stock_quantity",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"product_snapshots\".QUANTITY \"product_snapshots__snapshot_stock_quantity\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE  AS \"product_snapshots\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.QUANTITY"
+  ]
+ },
+ {
+  "cube": "product_snapshots",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "product_snapshots.id",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"product_snapshots\".ID \"product_snapshots__id\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE  AS \"product_snapshots\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.ID"
+  ]
+ },
+ {
+  "cube": "product_snapshots",
+  "type": "cube",
+  "kind": "dimension",
+  "member": "product_snapshots.snapshot_price",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"product_snapshots\".PRICE \"product_snapshots__snapshot_price\" \nFROM  DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE  AS \"product_snapshots\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.PRODUCTS_CLONE.PRICE"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "measure",
+  "member": "orders_overview_finance.count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"orders\".ID) IS NOT NULL THEN 1 END \"orders_overview_finance__count\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "measure",
+  "member": "orders_overview_finance.revenue",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".AMOUNT \"orders_overview_finance__revenue\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "measure",
+  "member": "orders_overview_finance.average_order_value",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".AMOUNT / NULLIF(CASE WHEN (\"orders\".ID) IS NOT NULL THEN 1 END, 0) \"orders_overview_finance__average_order_value\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT",
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "measure",
+  "member": "orders_overview_finance.return_rate",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT 1.0 * CASE WHEN (CASE WHEN (\"orders\".STATUS = 'returned') THEN \"orders\".ID END) IS NOT NULL THEN 1 END / NULLIF(CASE WHEN (\"orders\".ID) IS NOT NULL THEN 1 END, 0) \"orders_overview_finance__return_rate\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "measure",
+  "member": "orders_overview_finance.revenue_prior_month",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"orders\".AMOUNT \"orders__revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"),\ncte_1 AS (  SELECT \"fk_aggregate\".\"orders__revenue\" \"orders__revenue_prior_month\" \n  FROM  cte_0  AS \"fk_aggregate\")\nSELECT \"fk_aggregate\".\"orders__revenue_prior_month\" \"orders_overview_finance__revenue_prior_month\" \nFROM  cte_1  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "measure",
+  "member": "orders_overview_finance.revenue_month_over_month",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"orders\".AMOUNT \"orders__revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"),\ncte_1 AS (  SELECT \"orders\".AMOUNT \"orders__revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"),\ncte_2 AS (  SELECT \"fk_aggregate\".\"orders__revenue\" \"orders__revenue_prior_month\" \n  FROM  cte_1  AS \"fk_aggregate\"),\ncte_3 AS (  SELECT (\"q_0\".\"orders__revenue\" - \"q_1\".\"orders__revenue_prior_month\") / NULLIF(\"q_1\".\"orders__revenue_prior_month\", 0) \"orders__revenue_month_over_month\" \n  FROM  cte_0  AS \"q_0\"\n  INNER JOIN  cte_2  AS \"q_1\" ON 1 = 1)\nSELECT \"fk_aggregate\".\"orders__revenue_month_over_month\" \"orders_overview_finance__revenue_month_over_month\" \nFROM  cte_3  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "measure",
+  "member": "orders_overview_finance.revenue_all_statuses",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"orders\".AMOUNT \"orders__revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"),\ncte_1 AS (  SELECT sum(\"fk_aggregate\".\"orders__revenue\") \"orders__revenue_all_statuses\" \n  FROM  cte_0  AS \"fk_aggregate\")\nSELECT \"fk_aggregate\".\"orders__revenue_all_statuses\" \"orders_overview_finance__revenue_all_statuses\" \nFROM  cte_1  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "measure",
+  "member": "orders_overview_finance.revenue_share_of_statuses",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"orders\".AMOUNT \"orders__revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"),\ncte_1 AS (  SELECT sum(\"fk_aggregate\".\"orders__revenue\") \"orders__revenue_all_statuses\" \n  FROM  cte_0  AS \"fk_aggregate\"),\ncte_2 AS (  SELECT \"q_0\".\"orders__revenue\" / NULLIF(\"q_1\".\"orders__revenue_all_statuses\", 0) \"orders__revenue_share_of_statuses\" \n  FROM  cte_0  AS \"q_0\"\n  INNER JOIN  cte_1  AS \"q_1\" ON 1 = 1)\nSELECT \"fk_aggregate\".\"orders__revenue_share_of_statuses\" \"orders_overview_finance__revenue_share_of_statuses\" \nFROM  cte_2  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "measure",
+  "member": "orders_overview_finance.cumulative_revenue",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"orders\".AMOUNT \"orders__cumulative_revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\")\nSELECT \"fk_aggregate\".\"orders__cumulative_revenue\" \"orders_overview_finance__cumulative_revenue\" \nFROM  cte_0  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "measure",
+  "member": "orders_overview_finance.min_amount",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".AMOUNT \"orders_overview_finance__min_amount\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "measure",
+  "member": "orders_overview_finance.max_amount",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".AMOUNT \"orders_overview_finance__max_amount\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview_finance.order_status",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".STATUS \"orders_overview_finance__order_status\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview_finance.status_group",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN \"orders\".STATUS IN ('new', 'paid') THEN 'open' WHEN \"orders\".STATUS IN ('shipped', 'delivered') THEN 'completed' ELSE 'returned' END \"orders_overview_finance__status_group\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview_finance.is_high_value",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".AMOUNT >= 1000 \"orders_overview_finance__is_high_value\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview_finance.ordered_at",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CONVERT_TIMEZONE('UTC', \"orders\".ORDERED_AT::timestamp_tz)::timestamp_ntz \"orders_overview_finance__ordered_at\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ORDERED_AT"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview_finance.customers_id",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"customers\".ID \"orders_overview_finance__customers_id\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLEFT JOIN  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\" ON \"orders\".CUSTOMER_ID = \"customers\".ID\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview_finance.customers_email_domain",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT SPLIT_PART(\"customers\".EMAIL, '@', 2) \"orders_overview_finance__customers_email_domain\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLEFT JOIN  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\" ON \"orders\".CUSTOMER_ID = \"customers\".ID\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview_finance.customers_full_name",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"customers\".FULL_NAME \"orders_overview_finance__customers_full_name\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLEFT JOIN  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\" ON \"orders\".CUSTOMER_ID = \"customers\".ID\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview_finance.customers_region",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"customers\".REGION \"orders_overview_finance__customers_region\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLEFT JOIN  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\" ON \"orders\".CUSTOMER_ID = \"customers\".ID\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview_finance.customers_is_emea",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"customers\".REGION = 'EU' \"orders_overview_finance__customers_is_emea\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLEFT JOIN  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\" ON \"orders\".CUSTOMER_ID = \"customers\".ID\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview_finance.fiscal_fiscal_year",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"calendar\".FISCAL_YEAR \"orders_overview_finance__fiscal_fiscal_year\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLEFT JOIN  (SELECT\n  d.CALENDAR_DATE,\n  DATE_TRUNC('month', d.CALENDAR_DATE) AS MONTH_START,\n  DATEADD('month', 1, DATE_TRUNC('quarter', DATEADD('month', -1, d.CALENDAR_DATE))) AS FISCAL_QUARTER_START,\n  DATEADD('month', 1, DATE_TRUNC('year', DATEADD('month', -1, d.CALENDAR_DATE))) AS FISCAL_YEAR_START,\n  YEAR(DATEADD('month', -1, d.CALENDAR_DATE)) AS FISCAL_YEAR,\n  DATEADD('year', -1, d.CALENDAR_DATE) AS PRIOR_FISCAL_YEAR_DATE,\n  DATEADD('month', -1, d.CALENDAR_DATE) AS PRIOR_MONTH_DATE,\n  DAYNAME(d.CALENDAR_DATE) AS DAY_NAME,\n  DAYOFWEEKISO(d.CALENDAR_DATE) >= 6 AS IS_WEEKEND\nFROM (\n  SELECT DATEADD('day', ROW_NUMBER() OVER (ORDER BY SEQ4()) - 1, '2024-01-01'::TIMESTAMP_NTZ) AS CALENDAR_DATE\n  FROM TABLE(GENERATOR(ROWCOUNT => 1461))\n) AS d\n)  AS \"calendar\" ON CONVERT_TIMEZONE('UTC', DATE_TRUNC('day', \"orders\".ORDERED_AT)::TIMESTAMP_NTZ::timestamp_tz)::timestamp_ntz = CONVERT_TIMEZONE('UTC', \"calendar\".CALENDAR_DATE::timestamp_tz)::timestamp_ntz\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ORDERED_AT"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview_finance.fiscal_is_weekend",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"calendar\".IS_WEEKEND \"orders_overview_finance__fiscal_is_weekend\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLEFT JOIN  (SELECT\n  d.CALENDAR_DATE,\n  DATE_TRUNC('month', d.CALENDAR_DATE) AS MONTH_START,\n  DATEADD('month', 1, DATE_TRUNC('quarter', DATEADD('month', -1, d.CALENDAR_DATE))) AS FISCAL_QUARTER_START,\n  DATEADD('month', 1, DATE_TRUNC('year', DATEADD('month', -1, d.CALENDAR_DATE))) AS FISCAL_YEAR_START,\n  YEAR(DATEADD('month', -1, d.CALENDAR_DATE)) AS FISCAL_YEAR,\n  DATEADD('year', -1, d.CALENDAR_DATE) AS PRIOR_FISCAL_YEAR_DATE,\n  DATEADD('month', -1, d.CALENDAR_DATE) AS PRIOR_MONTH_DATE,\n  DAYNAME(d.CALENDAR_DATE) AS DAY_NAME,\n  DAYOFWEEKISO(d.CALENDAR_DATE) >= 6 AS IS_WEEKEND\nFROM (\n  SELECT DATEADD('day', ROW_NUMBER() OVER (ORDER BY SEQ4()) - 1, '2024-01-01'::TIMESTAMP_NTZ) AS CALENDAR_DATE\n  FROM TABLE(GENERATOR(ROWCOUNT => 1461))\n) AS d\n)  AS \"calendar\" ON CONVERT_TIMEZONE('UTC', DATE_TRUNC('day', \"orders\".ORDERED_AT)::TIMESTAMP_NTZ::timestamp_tz)::timestamp_ntz = CONVERT_TIMEZONE('UTC', \"calendar\".CALENDAR_DATE::timestamp_tz)::timestamp_ntz\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ORDERED_AT"
+  ]
+ },
+ {
+  "cube": "orders_overview_finance",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview_finance.status",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".STATUS \"orders_overview_finance__status\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "order_items_detail",
+  "type": "view",
+  "kind": "measure",
+  "member": "order_items_detail.discount_share",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"order_items\".DISCOUNT \"order_items__discount_amount\" \n  FROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\n  LEFT JOIN  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\" ON \"order_items\".PRODUCT_ID = \"products\".ID\n  WHERE (\"products\".IS_ACTIVE = ?)),\ncte_1 AS (  SELECT \"order_items\".QUANTITY * \"order_items\".UNIT_PRICE \"order_items__gross_amount\" \n  FROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\n  LEFT JOIN  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\" ON \"order_items\".PRODUCT_ID = \"products\".ID\n  WHERE (\"products\".IS_ACTIVE = ?)),\ncte_2 AS (  SELECT \"q_0\".\"order_items__discount_amount\" / NULLIF(\"q_1\".\"order_items__gross_amount\", 0) \"order_items_detail__discount_share\" \n  FROM  cte_0  AS \"q_0\"\n  INNER JOIN  cte_1  AS \"q_1\" ON 1 = 1)\nSELECT \"fk_aggregate\".\"order_items_detail__discount_share\" \"order_items_detail__discount_share\" \nFROM  cte_2  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.DISCOUNT",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.PRODUCT_ID",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.QUANTITY",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.UNIT_PRICE",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.IS_ACTIVE"
+  ]
+ },
+ {
+  "cube": "order_items_detail",
+  "type": "view",
+  "kind": "measure",
+  "member": "order_items_detail.count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"order_items\".ORDER_ID || '-' || \"order_items\".ITEM_ID) IS NOT NULL THEN 1 END \"order_items_detail__count\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nLEFT JOIN  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\" ON \"order_items\".PRODUCT_ID = \"products\".ID\nWHERE (\"products\".IS_ACTIVE = ?)\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.ITEM_ID",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.ORDER_ID",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.PRODUCT_ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.IS_ACTIVE"
+  ]
+ },
+ {
+  "cube": "order_items_detail",
+  "type": "view",
+  "kind": "measure",
+  "member": "order_items_detail.quantity_sold",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"order_items\".QUANTITY \"order_items_detail__quantity_sold\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nLEFT JOIN  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\" ON \"order_items\".PRODUCT_ID = \"products\".ID\nWHERE (\"products\".IS_ACTIVE = ?)\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.PRODUCT_ID",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.QUANTITY",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.IS_ACTIVE"
+  ]
+ },
+ {
+  "cube": "order_items_detail",
+  "type": "view",
+  "kind": "measure",
+  "member": "order_items_detail.gross_amount",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"order_items\".QUANTITY * \"order_items\".UNIT_PRICE \"order_items_detail__gross_amount\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nLEFT JOIN  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\" ON \"order_items\".PRODUCT_ID = \"products\".ID\nWHERE (\"products\".IS_ACTIVE = ?)\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.PRODUCT_ID",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.QUANTITY",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.UNIT_PRICE",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.IS_ACTIVE"
+  ]
+ },
+ {
+  "cube": "order_items_detail",
+  "type": "view",
+  "kind": "measure",
+  "member": "order_items_detail.discount_amount",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"order_items\".DISCOUNT \"order_items_detail__discount_amount\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nLEFT JOIN  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\" ON \"order_items\".PRODUCT_ID = \"products\".ID\nWHERE (\"products\".IS_ACTIVE = ?)\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.DISCOUNT",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.PRODUCT_ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.IS_ACTIVE"
+  ]
+ },
+ {
+  "cube": "order_items_detail",
+  "type": "view",
+  "kind": "measure",
+  "member": "order_items_detail.net_amount",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT (\"order_items\".QUANTITY * \"order_items\".UNIT_PRICE) - \"order_items\".DISCOUNT \"order_items_detail__net_amount\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nLEFT JOIN  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\" ON \"order_items\".PRODUCT_ID = \"products\".ID\nWHERE (\"products\".IS_ACTIVE = ?)\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.DISCOUNT",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.PRODUCT_ID",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.QUANTITY",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.UNIT_PRICE",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.IS_ACTIVE"
+  ]
+ },
+ {
+  "cube": "order_items_detail",
+  "type": "view",
+  "kind": "dimension",
+  "member": "order_items_detail.product_label",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products\".CATEGORY || ' / ' || \"products\".NAME \"order_items_detail__product_label\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nLEFT JOIN  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\" ON \"order_items\".PRODUCT_ID = \"products\".ID\nWHERE (\"products\".IS_ACTIVE = ?)\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.PRODUCT_ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.CATEGORY",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.IS_ACTIVE",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.NAME"
+  ]
+ },
+ {
+  "cube": "order_items_detail",
+  "type": "view",
+  "kind": "dimension",
+  "member": "order_items_detail.has_discount",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"order_items\".DISCOUNT > 0 \"order_items_detail__has_discount\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nLEFT JOIN  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\" ON \"order_items\".PRODUCT_ID = \"products\".ID\nWHERE (\"products\".IS_ACTIVE = ?)\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.DISCOUNT",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.PRODUCT_ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.IS_ACTIVE"
+  ]
+ },
+ {
+  "cube": "order_items_detail",
+  "type": "view",
+  "kind": "dimension",
+  "member": "order_items_detail.product",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products\".NAME \"order_items_detail__product\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nLEFT JOIN  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\" ON \"order_items\".PRODUCT_ID = \"products\".ID\nWHERE (\"products\".IS_ACTIVE = ?)\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.PRODUCT_ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.IS_ACTIVE",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.NAME"
+  ]
+ },
+ {
+  "cube": "order_items_detail",
+  "type": "view",
+  "kind": "dimension",
+  "member": "order_items_detail.product_category",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products\".CATEGORY \"order_items_detail__product_category\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nLEFT JOIN  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\" ON \"order_items\".PRODUCT_ID = \"products\".ID\nWHERE (\"products\".IS_ACTIVE = ?)\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.PRODUCT_ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.CATEGORY",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.IS_ACTIVE"
+  ]
+ },
+ {
+  "cube": "order_items_detail",
+  "type": "view",
+  "kind": "dimension",
+  "member": "order_items_detail.is_active",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"products\".IS_ACTIVE \"order_items_detail__is_active\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nLEFT JOIN  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\" ON \"order_items\".PRODUCT_ID = \"products\".ID\nWHERE (\"products\".IS_ACTIVE = ?)\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.PRODUCT_ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.IS_ACTIVE"
+  ]
+ },
+ {
+  "cube": "order_items_detail",
+  "type": "view",
+  "kind": "dimension",
+  "member": "order_items_detail.orders_status",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".STATUS \"order_items_detail__orders_status\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nLEFT JOIN  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\" ON \"order_items\".ORDER_ID = \"orders\".ID\nLEFT JOIN  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\" ON \"order_items\".PRODUCT_ID = \"products\".ID\nWHERE (\"products\".IS_ACTIVE = ?)\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.ORDER_ID",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.PRODUCT_ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.IS_ACTIVE"
+  ]
+ },
+ {
+  "cube": "order_items_detail",
+  "type": "view",
+  "kind": "dimension",
+  "member": "order_items_detail.orders_ordered_at",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CONVERT_TIMEZONE('UTC', \"orders\".ORDERED_AT::timestamp_tz)::timestamp_ntz \"order_items_detail__orders_ordered_at\" \nFROM  DWH_TESTING.SCHEMA_A.ORDER_ITEMS  AS \"order_items\"\nLEFT JOIN  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\" ON \"order_items\".ORDER_ID = \"orders\".ID\nLEFT JOIN  DWH_TESTING.SCHEMA_A.PRODUCTS  AS \"products\" ON \"order_items\".PRODUCT_ID = \"products\".ID\nWHERE (\"products\".IS_ACTIVE = ?)\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.ORDERED_AT",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.ORDER_ID",
+   "DWH_TESTING.SCHEMA_A.ORDER_ITEMS.PRODUCT_ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.ID",
+   "DWH_TESTING.SCHEMA_A.PRODUCTS.IS_ACTIVE"
+  ]
+ },
+ {
+  "cube": "orders_overview",
+  "type": "view",
+  "kind": "measure",
+  "member": "orders_overview.count",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN (\"orders\".ID) IS NOT NULL THEN 1 END \"orders_overview__count\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID"
+  ]
+ },
+ {
+  "cube": "orders_overview",
+  "type": "view",
+  "kind": "measure",
+  "member": "orders_overview.revenue",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".AMOUNT \"orders_overview__revenue\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders_overview",
+  "type": "view",
+  "kind": "measure",
+  "member": "orders_overview.average_order_value",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".AMOUNT / NULLIF(CASE WHEN (\"orders\".ID) IS NOT NULL THEN 1 END, 0) \"orders_overview__average_order_value\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT",
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID"
+  ]
+ },
+ {
+  "cube": "orders_overview",
+  "type": "view",
+  "kind": "measure",
+  "member": "orders_overview.return_rate",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT 1.0 * CASE WHEN (CASE WHEN (\"orders\".STATUS = 'returned') THEN \"orders\".ID END) IS NOT NULL THEN 1 END / NULLIF(CASE WHEN (\"orders\".ID) IS NOT NULL THEN 1 END, 0) \"orders_overview__return_rate\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ID",
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders_overview",
+  "type": "view",
+  "kind": "measure",
+  "member": "orders_overview.revenue_prior_month",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"orders\".AMOUNT \"orders__revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"),\ncte_1 AS (  SELECT \"fk_aggregate\".\"orders__revenue\" \"orders__revenue_prior_month\" \n  FROM  cte_0  AS \"fk_aggregate\")\nSELECT \"fk_aggregate\".\"orders__revenue_prior_month\" \"orders_overview__revenue_prior_month\" \nFROM  cte_1  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders_overview",
+  "type": "view",
+  "kind": "measure",
+  "member": "orders_overview.revenue_month_over_month",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"orders\".AMOUNT \"orders__revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"),\ncte_1 AS (  SELECT \"orders\".AMOUNT \"orders__revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"),\ncte_2 AS (  SELECT \"fk_aggregate\".\"orders__revenue\" \"orders__revenue_prior_month\" \n  FROM  cte_1  AS \"fk_aggregate\"),\ncte_3 AS (  SELECT (\"q_0\".\"orders__revenue\" - \"q_1\".\"orders__revenue_prior_month\") / NULLIF(\"q_1\".\"orders__revenue_prior_month\", 0) \"orders__revenue_month_over_month\" \n  FROM  cte_0  AS \"q_0\"\n  INNER JOIN  cte_2  AS \"q_1\" ON 1 = 1)\nSELECT \"fk_aggregate\".\"orders__revenue_month_over_month\" \"orders_overview__revenue_month_over_month\" \nFROM  cte_3  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders_overview",
+  "type": "view",
+  "kind": "measure",
+  "member": "orders_overview.revenue_all_statuses",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"orders\".AMOUNT \"orders__revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"),\ncte_1 AS (  SELECT sum(\"fk_aggregate\".\"orders__revenue\") \"orders__revenue_all_statuses\" \n  FROM  cte_0  AS \"fk_aggregate\")\nSELECT \"fk_aggregate\".\"orders__revenue_all_statuses\" \"orders_overview__revenue_all_statuses\" \nFROM  cte_1  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders_overview",
+  "type": "view",
+  "kind": "measure",
+  "member": "orders_overview.revenue_share_of_statuses",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"orders\".AMOUNT \"orders__revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"),\ncte_1 AS (  SELECT sum(\"fk_aggregate\".\"orders__revenue\") \"orders__revenue_all_statuses\" \n  FROM  cte_0  AS \"fk_aggregate\"),\ncte_2 AS (  SELECT \"q_0\".\"orders__revenue\" / NULLIF(\"q_1\".\"orders__revenue_all_statuses\", 0) \"orders__revenue_share_of_statuses\" \n  FROM  cte_0  AS \"q_0\"\n  INNER JOIN  cte_1  AS \"q_1\" ON 1 = 1)\nSELECT \"fk_aggregate\".\"orders__revenue_share_of_statuses\" \"orders_overview__revenue_share_of_statuses\" \nFROM  cte_2  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders_overview",
+  "type": "view",
+  "kind": "measure",
+  "member": "orders_overview.cumulative_revenue",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": " WITH \ncte_0 AS (  SELECT \"orders\".AMOUNT \"orders__cumulative_revenue\" \n  FROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\")\nSELECT \"fk_aggregate\".\"orders__cumulative_revenue\" \"orders_overview__cumulative_revenue\" \nFROM  cte_0  AS \"fk_aggregate\"\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders_overview",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview.order_status",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".STATUS \"orders_overview__order_status\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders_overview",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview.status_group",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CASE WHEN \"orders\".STATUS IN ('new', 'paid') THEN 'open' WHEN \"orders\".STATUS IN ('shipped', 'delivered') THEN 'completed' ELSE 'returned' END \"orders_overview__status_group\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.STATUS"
+  ]
+ },
+ {
+  "cube": "orders_overview",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview.is_high_value",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"orders\".AMOUNT >= 1000 \"orders_overview__is_high_value\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.AMOUNT"
+  ]
+ },
+ {
+  "cube": "orders_overview",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview.ordered_at",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT CONVERT_TIMEZONE('UTC', \"orders\".ORDERED_AT::timestamp_tz)::timestamp_ntz \"orders_overview__ordered_at\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ORDERED_AT"
+  ]
+ },
+ {
+  "cube": "orders_overview",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview.customers_id",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"customers\".ID \"orders_overview__customers_id\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLEFT JOIN  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\" ON \"orders\".CUSTOMER_ID = \"customers\".ID\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "orders_overview",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview.customers_email_domain",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT SPLIT_PART(\"customers\".EMAIL, '@', 2) \"orders_overview__customers_email_domain\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLEFT JOIN  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\" ON \"orders\".CUSTOMER_ID = \"customers\".ID\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "orders_overview",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview.customers_full_name",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"customers\".FULL_NAME \"orders_overview__customers_full_name\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLEFT JOIN  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\" ON \"orders\".CUSTOMER_ID = \"customers\".ID\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "orders_overview",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview.customers_region",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"customers\".REGION \"orders_overview__customers_region\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLEFT JOIN  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\" ON \"orders\".CUSTOMER_ID = \"customers\".ID\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "orders_overview",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview.customers_is_emea",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"customers\".REGION = 'EU' \"orders_overview__customers_is_emea\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLEFT JOIN  (SELECT\n  c.ID,\n  c.EMAIL,\n  c.FULL_NAME,\n  c.REGION,\n  CASE c.REGION WHEN 'US' THEN 39.8 WHEN 'EU' THEN 50.1 WHEN 'APAC' THEN 1.35 WHEN 'LATAM' THEN -15.8 END AS REGION_LAT,\n  CASE c.REGION WHEN 'US' THEN -98.6 WHEN 'EU' THEN 9.7 WHEN 'APAC' THEN 103.8 WHEN 'LATAM' THEN -47.9 END AS REGION_LON\nFROM DWH_TESTING.SCHEMA_B.CUSTOMERS AS c\n)  AS \"customers\" ON \"orders\".CUSTOMER_ID = \"customers\".ID\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.CUSTOMER_ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.EMAIL",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.FULL_NAME",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.ID",
+   "DWH_TESTING.SCHEMA_B.CUSTOMERS.REGION"
+  ]
+ },
+ {
+  "cube": "orders_overview",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview.fiscal_fiscal_year",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"calendar\".FISCAL_YEAR \"orders_overview__fiscal_fiscal_year\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLEFT JOIN  (SELECT\n  d.CALENDAR_DATE,\n  DATE_TRUNC('month', d.CALENDAR_DATE) AS MONTH_START,\n  DATEADD('month', 1, DATE_TRUNC('quarter', DATEADD('month', -1, d.CALENDAR_DATE))) AS FISCAL_QUARTER_START,\n  DATEADD('month', 1, DATE_TRUNC('year', DATEADD('month', -1, d.CALENDAR_DATE))) AS FISCAL_YEAR_START,\n  YEAR(DATEADD('month', -1, d.CALENDAR_DATE)) AS FISCAL_YEAR,\n  DATEADD('year', -1, d.CALENDAR_DATE) AS PRIOR_FISCAL_YEAR_DATE,\n  DATEADD('month', -1, d.CALENDAR_DATE) AS PRIOR_MONTH_DATE,\n  DAYNAME(d.CALENDAR_DATE) AS DAY_NAME,\n  DAYOFWEEKISO(d.CALENDAR_DATE) >= 6 AS IS_WEEKEND\nFROM (\n  SELECT DATEADD('day', ROW_NUMBER() OVER (ORDER BY SEQ4()) - 1, '2024-01-01'::TIMESTAMP_NTZ) AS CALENDAR_DATE\n  FROM TABLE(GENERATOR(ROWCOUNT => 1461))\n) AS d\n)  AS \"calendar\" ON CONVERT_TIMEZONE('UTC', DATE_TRUNC('day', \"orders\".ORDERED_AT)::TIMESTAMP_NTZ::timestamp_tz)::timestamp_ntz = CONVERT_TIMEZONE('UTC', \"calendar\".CALENDAR_DATE::timestamp_tz)::timestamp_ntz\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ORDERED_AT"
+  ]
+ },
+ {
+  "cube": "orders_overview",
+  "type": "view",
+  "kind": "dimension",
+  "member": "orders_overview.fiscal_is_weekend",
+  "mode": "ungrouped",
+  "data_source": "default",
+  "sql": "SELECT \"calendar\".IS_WEEKEND \"orders_overview__fiscal_is_weekend\" \nFROM  DWH_TESTING.RECON_DEMO.ORDERS  AS \"orders\"\nLEFT JOIN  (SELECT\n  d.CALENDAR_DATE,\n  DATE_TRUNC('month', d.CALENDAR_DATE) AS MONTH_START,\n  DATEADD('month', 1, DATE_TRUNC('quarter', DATEADD('month', -1, d.CALENDAR_DATE))) AS FISCAL_QUARTER_START,\n  DATEADD('month', 1, DATE_TRUNC('year', DATEADD('month', -1, d.CALENDAR_DATE))) AS FISCAL_YEAR_START,\n  YEAR(DATEADD('month', -1, d.CALENDAR_DATE)) AS FISCAL_YEAR,\n  DATEADD('year', -1, d.CALENDAR_DATE) AS PRIOR_FISCAL_YEAR_DATE,\n  DATEADD('month', -1, d.CALENDAR_DATE) AS PRIOR_MONTH_DATE,\n  DAYNAME(d.CALENDAR_DATE) AS DAY_NAME,\n  DAYOFWEEKISO(d.CALENDAR_DATE) >= 6 AS IS_WEEKEND\nFROM (\n  SELECT DATEADD('day', ROW_NUMBER() OVER (ORDER BY SEQ4()) - 1, '2024-01-01'::TIMESTAMP_NTZ) AS CALENDAR_DATE\n  FROM TABLE(GENERATOR(ROWCOUNT => 1461))\n) AS d\n)  AS \"calendar\" ON CONVERT_TIMEZONE('UTC', DATE_TRUNC('day', \"orders\".ORDERED_AT)::TIMESTAMP_NTZ::timestamp_tz)::timestamp_ntz = CONVERT_TIMEZONE('UTC', \"calendar\".CALENDAR_DATE::timestamp_tz)::timestamp_ntz\nORDER BY  1  ASC\nLIMIT 1",
+  "uses_pre_aggregation": false,
+  "tables": [
+   "DWH_TESTING.RECON_DEMO.ORDERS"
+  ],
+  "columns": [
+   "DWH_TESTING.RECON_DEMO.ORDERS.ORDERED_AT"
+  ]
+ }
+]

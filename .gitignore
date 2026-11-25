@@ -1,0 +1,18 @@
+# Local workspace. It replaces a dependency with a local checkout, so it stays out of the repository.
+go.work
+go.work.sum
+
+# Built binary and release output
+/synq-cube
+/synq-cube.exe
+synq-cube-*
+/dist/
+/.completions/
+
+# A snapshot from --output can hold a private data model.
+/*.json
+
+.env
+.idea/
+.vscode/
+.DS_Store
