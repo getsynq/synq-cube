@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	ingestcubev1 "buf.build/gen/go/getsynq/api/protocolbuffers/go/synq/ingest/cube/v1"
 	qualityoauth "github.com/getsynq/quality-oauth-go"
 	"github.com/spf13/cobra"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -32,7 +34,33 @@ const (
 	envCubeCloudAPIKey          = "CUBE_CLOUD_API_KEY"
 	envCubeCloudDeploymentID    = "CUBE_CLOUD_DEPLOYMENT_ID"
 	envCubeCloudEnvironmentID   = "CUBE_CLOUD_ENVIRONMENT_ID"
+	envCubeInclude              = "CUBE_INCLUDE"
+	envCubeExclude              = "CUBE_EXCLUDE"
+	envCubeSkipHidden           = "CUBE_SKIP_HIDDEN"
+	envCubeSkipMemberSQL        = "CUBE_SKIP_MEMBER_SQL"
+	envCubeSkipModelExport      = "CUBE_SKIP_MODEL_EXPORT"
 )
+
+// Names of the flags that the command reads back.
+const (
+	flagInput           = "input"
+	flagInclude         = "include"
+	flagExclude         = "exclude"
+	flagSkipHidden      = "skip-hidden"
+	flagSkipMemberSQL   = "skip-member-sql"
+	flagSkipModelExport = "skip-model-export"
+)
+
+// The flags that set how the command reads Cube. With --input the command does not read Cube,
+// so it refuses them.
+var collectionFlags = []string{
+	"cube-api-url", "cube-security-context", "security-context-label", "cube-version",
+	"cube-cloud-url", "cube-cloud-deployment-id", "cube-cloud-environment-id",
+	"concurrency", "request-timeout",
+}
+
+// stdinName is the value of --input that reads the standard input.
+const stdinName = "-"
 
 // How many warnings the command prints before it prints only their count.
 const maxPrintedWarnings = 20
@@ -47,6 +75,12 @@ type uploadFlags struct {
 	cubeCloudEnvironmentID string
 	concurrency            int
 	requestTimeout         time.Duration
+	include                []string
+	exclude                []string
+	skipHidden             bool
+	skipMemberSQL          bool
+	skipModelExport        bool
+	input                  string
 	dryRun                 bool
 	output                 string
 }
@@ -79,7 +113,22 @@ Credential of Coalesce Quality:
 The integration names the deployment, so the command has no flag for it.
 
 A member for which Cube generates no SQL is a warning. The command fails if the
-data model cannot be read or if the upload fails.`,
+data model cannot be read or if the upload fails.
+
+Snapshot file:
+
+  --output writes the snapshot to a file. The file is the protojson form of the
+  message synq.ingest.cube.v1.IngestSnapshotRequest. --input sends a snapshot
+  from such a file. The command then sends no request to Cube and needs no
+  credential of Cube.
+
+Filters:
+
+  --include, --exclude, --skip-hidden, --skip-member-sql and --skip-model-export
+  leave parts of the data model out of the snapshot. They work on a collection
+  and on a file. For Coalesce Quality a snapshot is the whole data model: a cube
+  or a view that is not in the snapshot is removed from Coalesce Quality. A
+  filter is not a way to update a part of the data model.`,
 		Example: `  # Cube Core or a self-hosted Cube, with the API secret
   export CUBE_API_URL=https://cube.example.com/cubejs-api
   export CUBE_API_SECRET=...
@@ -87,10 +136,16 @@ data model cannot be read or if the upload fails.`,
   synq-cube upload
 
   # Write the snapshot to a file and send nothing
-  synq-cube upload --dry-run --output snapshot.json`,
+  synq-cube upload --dry-run --output snapshot.json
+
+  # Send the snapshot of a file
+  synq-cube upload --input snapshot.json
+
+  # Leave the cubes and the views with these names out of the snapshot
+  synq-cube upload --exclude 'tmp_*' --exclude 'scratch_*'`,
 		Args: cobra.NoArgs,
 		RunE: func(command *cobra.Command, _ []string) error {
-			return runUpload(command.Context(), deps, deployment, flags)
+			return runUpload(command.Context(), deps, deployment, flags, command.Flags().Changed)
 		},
 	}
 	f := command.Flags()
@@ -110,13 +165,39 @@ data model cannot be read or if the upload fails.`,
 		"Id of the Cube Cloud environment. The default is the production environment (or $"+envCubeCloudEnvironmentID+")")
 	f.IntVar(&flags.concurrency, "concurrency", cube.DefaultConcurrency, "How many /v1/sql requests run at the same time")
 	f.DurationVar(&flags.requestTimeout, "request-timeout", cube.DefaultRequestTimeout, "Time limit of one request to Cube")
-	f.BoolVar(&flags.dryRun, "dry-run", false, "Read the data model and send nothing. Use it with --output")
+	f.StringArrayVar(&flags.include, flagInclude, nil,
+		"Keep only the cubes and the views with a name that matches this glob pattern, for example 'orders*'. "+
+			"Can be set more than once. Coalesce Quality removes each cube and each view that is not in the snapshot "+
+			"(or $"+envCubeInclude+", separated by commas)")
+	f.StringArrayVar(&flags.exclude, flagExclude, nil,
+		"Leave out the cubes and the views with a name that matches this glob pattern. It wins over --include. "+
+			"Can be set more than once. Coalesce Quality removes each cube and each view that is not in the snapshot "+
+			"(or $"+envCubeExclude+", separated by commas)")
+	f.BoolVar(&flags.skipHidden, flagSkipHidden, false,
+		"Leave out the cubes, the views and the members that are not public. "+
+			"Coalesce Quality removes each cube and each view that is not in the snapshot (or $"+envCubeSkipHidden+")")
+	f.BoolVar(&flags.skipMemberSQL, flagSkipMemberSQL, false,
+		"Leave out the SQL of each member and send no /v1/sql request. The snapshot then has no lineage to the warehouse tables and no data source for each cube (or $"+
+			envCubeSkipMemberSQL+")")
+	f.BoolVar(&flags.skipModelExport, flagSkipModelExport, false,
+		"Leave out the Cube Cloud model export and send no request for it (or $"+envCubeSkipModelExport+")")
+	f.StringVar(&flags.input, flagInput, "",
+		"Send the snapshot of this file and send no request to Cube. Use - for the standard input")
+	f.BoolVar(&flags.dryRun, "dry-run", false, "Send nothing to Coalesce Quality. Without --input, use it with --output")
 	f.StringVar(&flags.output, "output", "", "Write the snapshot to this file as JSON")
 	return command
 }
 
-func runUpload(ctx context.Context, deps Deps, deployment *region.Flags, flags *uploadFlags) error {
-	if flags.dryRun && flags.output == "" {
+func runUpload(ctx context.Context, deps Deps, deployment *region.Flags, flags *uploadFlags, changed func(string) bool) error {
+	fromFile := flags.input != ""
+	if fromFile {
+		for _, name := range collectionFlags {
+			if changed(name) {
+				return fmt.Errorf("--%s sets how the command reads Cube, and with --input the command does not read Cube: remove --%s", name, name)
+			}
+		}
+	}
+	if flags.dryRun && flags.output == "" && !fromFile {
 		return errors.New("--dry-run sends nothing: set --output to the file for the snapshot")
 	}
 	if flags.concurrency < 1 {
@@ -125,8 +206,20 @@ func runUpload(ctx context.Context, deps Deps, deployment *region.Flags, flags *
 	if flags.requestTimeout <= 0 {
 		return errors.New("--request-timeout must be more than 0")
 	}
+	filter, err := newFilter(flags, changed)
+	if err != nil {
+		return err
+	}
 
-	client, err := newCubeClient(ctx, flags)
+	// The two sources of a snapshot. Each fails here for a wrong setting, before the connection
+	// to Coalesce Quality.
+	var client *cube.Client
+	var fileSnapshot *cube.Snapshot
+	if fromFile {
+		fileSnapshot, err = readSnapshot(deps, flags.input)
+	} else {
+		client, err = newCubeClient(ctx, flags)
+	}
 	if err != nil {
 		return err
 	}
@@ -146,18 +239,30 @@ func runUpload(ctx context.Context, deps Deps, deployment *region.Flags, flags *
 		defer func() { _ = uploader.Close() }()
 	}
 
-	fmt.Fprintf(deps.Stdout, "Reading the data model from %s\n", client.APIURL())
-	snapshot, report, err := cube.Collect(ctx, client, cube.Options{
-		Concurrency:          flags.concurrency,
-		SecurityContextLabel: valueOrEnv(flags.securityContextLabel, envCubeSecurityContextLabel),
-		CubeVersion:          valueOrEnv(flags.cubeVersion, envCubeVersion),
-	})
-	if err != nil {
-		return fmt.Errorf("cannot read the data model: %w", err)
+	var snapshot *cube.Snapshot
+	var report *cube.Report
+	if fromFile {
+		fmt.Fprintf(deps.Stdout, "Reading the snapshot from %s\n", inputName(flags.input))
+		snapshot, report, err = filterSnapshot(fileSnapshot, filter)
+		if err != nil {
+			return fmt.Errorf("cannot use the snapshot of %s: %w", inputName(flags.input), err)
+		}
+	} else {
+		fmt.Fprintf(deps.Stdout, "Reading the data model from %s\n", client.APIURL())
+		snapshot, report, err = cube.Collect(ctx, client, cube.Options{
+			Concurrency:          flags.concurrency,
+			SecurityContextLabel: valueOrEnv(flags.securityContextLabel, envCubeSecurityContextLabel),
+			CubeVersion:          valueOrEnv(flags.cubeVersion, envCubeVersion),
+			Filter:               filter,
+		})
+		if err != nil {
+			return fmt.Errorf("cannot read the data model: %w", err)
+		}
 	}
-	printReport(deps, report)
+	printReport(deps, report, filter)
+
 	// The collector returns a plain struct. The message of the upload is built here, with the
-	// build stamps of this binary.
+	// build stamps of this binary. A snapshot from a file gets them too.
 	request := quality.NewRequest(snapshot, build.Version, build.Time)
 
 	if flags.output != "" {
@@ -182,7 +287,111 @@ func runUpload(ctx context.Context, deps Deps, deployment *region.Flags, flags *
 	return nil
 }
 
-// newCubeClient picks the credential of Cube: Cube Cloud, then a ready token, then the API secret.
+// newFilter reads the filter from the flags and the environment. A flag wins over its variable.
+// It fails for a pattern that is not valid, before the command sends a request.
+func newFilter(flags *uploadFlags, changed func(string) bool) (cube.Filter, error) {
+	filter := cube.Filter{Include: flags.include, Exclude: flags.exclude}
+	if !changed(flagInclude) {
+		filter.Include = splitList(os.Getenv(envCubeInclude))
+	}
+	if !changed(flagExclude) {
+		filter.Exclude = splitList(os.Getenv(envCubeExclude))
+	}
+	for _, toggle := range []struct {
+		flag  string
+		env   string
+		value bool
+		into  *bool
+	}{
+		{flagSkipHidden, envCubeSkipHidden, flags.skipHidden, &filter.SkipHidden},
+		{flagSkipMemberSQL, envCubeSkipMemberSQL, flags.skipMemberSQL, &filter.SkipMemberSQL},
+		{flagSkipModelExport, envCubeSkipModelExport, flags.skipModelExport, &filter.SkipModelExport},
+	} {
+		*toggle.into = toggle.value
+		text := os.Getenv(toggle.env)
+		if changed(toggle.flag) || text == "" {
+			continue
+		}
+		value, err := strconv.ParseBool(text)
+		if err != nil {
+			return cube.Filter{}, fmt.Errorf("%s is %q: set it to true or false", toggle.env, text)
+		}
+		*toggle.into = value
+	}
+	if err := filter.Validate(); err != nil {
+		return cube.Filter{}, err
+	}
+	return filter, nil
+}
+
+// splitList reads a list that is separated by commas. It drops the empty entries.
+func splitList(text string) []string {
+	var out []string
+	for _, entry := range strings.Split(text, ",") {
+		if entry = strings.TrimSpace(entry); entry != "" {
+			out = append(out, entry)
+		}
+	}
+	return out
+}
+
+func inputName(input string) string {
+	if input == stdinName {
+		return "the standard input"
+	}
+	return input
+}
+
+// readSnapshot reads a snapshot file: the protojson form of IngestSnapshotRequest, as --output
+// writes it. A field that the message does not have is an error, so a typing error in a file
+// that a person edited does not pass. The uploader fields of the file are not used: the command
+// sends its own.
+func readSnapshot(deps Deps, input string) (*cube.Snapshot, error) {
+	var data []byte
+	var err error
+	if input == stdinName {
+		stdin := deps.Stdin
+		if stdin == nil {
+			stdin = os.Stdin
+		}
+		data, err = io.ReadAll(stdin)
+	} else {
+		data, err = os.ReadFile(input)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("cannot read the snapshot: %w", err)
+	}
+	request := &ingestcubev1.IngestSnapshotRequest{}
+	if err := (protojson.UnmarshalOptions{DiscardUnknown: false}).Unmarshal(data, request); err != nil {
+		return nil, fmt.Errorf("%s is not a snapshot file: %w", inputName(input), err)
+	}
+	if len(request.GetMeta()) == 0 {
+		return nil, fmt.Errorf("%s is not a snapshot file: it has no \"meta\"", inputName(input))
+	}
+	if !hasCubesList(request.GetMeta()) {
+		return nil, fmt.Errorf("%s is not a snapshot file: \"meta\" is not a JSON object with a \"cubes\" list", inputName(input))
+	}
+	if request.GetCollectedAt() == nil || request.GetCollectedAt().CheckValid() != nil || request.GetCollectedAt().AsTime().Unix() <= 0 {
+		return nil, fmt.Errorf("%s is not a snapshot file: it has no \"collectedAt\"", inputName(input))
+	}
+	return quality.NewSnapshot(request), nil
+}
+
+// filterSnapshot applies the filter to a snapshot from a file and counts what the result holds.
+func filterSnapshot(snapshot *cube.Snapshot, filter cube.Filter) (*cube.Snapshot, *cube.Report, error) {
+	filtered, filterReport, err := filter.Apply(snapshot)
+	if err != nil {
+		return nil, nil, err
+	}
+	report, err := cube.Describe(filtered)
+	if err != nil {
+		return nil, nil, err
+	}
+	report.LeftOut = filterReport.LeftOut
+	report.Warnings = filterReport.Warnings
+	return filtered, report, nil
+}
+
 func newCubeClient(ctx context.Context, flags *uploadFlags) (*cube.Client, error) {
 	apiURL := valueOrEnv(flags.cubeAPIURL, envCubeAPIURL)
 	securityContext := valueOrEnv(flags.securityContext, envCubeSecurityContext)
@@ -237,13 +446,30 @@ func newCubeClient(ctx context.Context, flags *uploadFlags) (*cube.Client, error
 	return cube.NewClient(apiURL, tokens, options...)
 }
 
-func printReport(deps Deps, report *cube.Report) {
+func printReport(deps Deps, report *cube.Report, filter cube.Filter) {
 	fmt.Fprintf(deps.Stdout, "Cubes: %d\n", report.Cubes)
 	fmt.Fprintf(deps.Stdout, "Views: %d\n", report.Views)
 	fmt.Fprintf(deps.Stdout, "Members: %d\n", report.Members)
 	fmt.Fprintf(deps.Stdout, "Members with an error: %d\n", report.MemberErrors)
 	if report.ModelExport {
 		fmt.Fprintln(deps.Stdout, "Cube Cloud model export: yes")
+	}
+	if len(filter.Include)+len(filter.Exclude) > 0 {
+		fmt.Fprintf(deps.Stdout, "Left out by --include and --exclude: cubes %d, views %d, members %d\n",
+			report.ExcludedCubes, report.ExcludedViews, report.ExcludedMembers)
+	}
+	if filter.SkipHidden {
+		fmt.Fprintf(deps.Stdout, "Left out by --skip-hidden: cubes %d, views %d, members %d\n",
+			report.HiddenCubes, report.HiddenViews, report.HiddenMembers)
+	}
+	if report.MemberSQLSkipped {
+		fmt.Fprintln(deps.Stdout, "Left out by --skip-member-sql: the SQL of each member")
+	}
+	switch {
+	case report.ModelExportSkipped && filter.SkipModelExport:
+		fmt.Fprintln(deps.Stdout, "Left out by --skip-model-export: the Cube Cloud model export")
+	case report.ModelExportSkipped:
+		fmt.Fprintln(deps.Stdout, "Left out: the Cube Cloud model export. It cannot be filtered, and a filter removed a part of the data model")
 	}
 	printWarnings(deps.Stderr, report.Warnings)
 }
@@ -277,4 +503,12 @@ func parseID(text string, what string, optional bool) (int64, error) {
 		return 0, fmt.Errorf("%s %q is not a positive number", what, text)
 	}
 	return id, nil
+}
+
+// hasCubesList is true if the text is a JSON object with a `cubes` list.
+func hasCubesList(meta []byte) bool {
+	var object struct {
+		Cubes *[]json.RawMessage `json:"cubes"`
+	}
+	return json.Unmarshal(meta, &object) == nil && object.Cubes != nil
 }

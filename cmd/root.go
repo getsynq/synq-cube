@@ -22,6 +22,8 @@ var build = buildinfo.Get()
 
 // Deps are the parts of the process that a test replaces.
 type Deps struct {
+	// Stdin is what `--input -` reads. Nil means the standard input of the process.
+	Stdin  io.Reader
 	Stdout io.Writer
 	Stderr io.Writer
 	// QualityOptions change how the upload connects to Coalesce Quality.
