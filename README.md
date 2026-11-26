@@ -642,7 +642,7 @@ curl -s -X POST "$CUBE_CLOUD_URL/api/v1/api-keys" \
 - A key with these two permissions gives the full snapshot: the data model, the SQL of the members, the model export and the data sources.
 - Cube Cloud gives the token the `meta-private` scope only if the owner of the key is an admin or has the "View data model" permission on the deployment. Without the scope, Cube Cloud refuses the model export, and the snapshot has no private cube, view or member.
 - To give the key an end date, add `"ttlHours"`.
-- If Coalesce Quality reads the deployment itself (the Cube Cloud option of the integration), add `DeploymentsPublicController.getDeployments` to `allowedEndpoints`. The setup of the integration then shows the deployments of the key as a selection. The uploader does not need this permission.
+- If Coalesce Quality reads the deployment itself (the Cube Cloud option of the integration), add `DeploymentsPublicController.getDeployments` to `allowedEndpoints`. The setup of the integration then shows the deployments of the key as a selection. Also add `DeploymentsPublicController.getDeploymentSettings`: it gives the project directory of the deployment, which Coalesce Quality uses to link each cube and view to its file in git. The uploader needs neither permission.
 
 The token that Cube Cloud creates has the scopes `meta` and `meta-private`. If the deployment refuses the `/v1/sql` requests of that token, the tool prints a warning for each member.
 
