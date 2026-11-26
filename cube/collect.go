@@ -75,6 +75,13 @@ type Report struct {
 	SQLRequests int
 	// ModelExport is true if the snapshot has the response of `/v1/model-export`.
 	ModelExport bool
+	// ModelExportCubes, ModelExportViews and ModelExportMembers count what only the model export
+	// has: the cubes, the views, and the measures and the dimensions that are not in the response
+	// of `/v1/meta`. These are the private ones (`public: false`). Cubes, Views and Members
+	// include them.
+	ModelExportCubes   int
+	ModelExportViews   int
+	ModelExportMembers int
 	// LeftOut says what the filter left out. In a report of Collect, ModelExportSkipped is true
 	// if the client is a Cube Cloud client and the filter stopped the model export.
 	LeftOut
@@ -85,9 +92,10 @@ type Report struct {
 	Warnings []string
 }
 
-// Describe counts what a snapshot holds: the cubes, the views and the members of DataModel, the
-// members with SQL and the grouped members of GeneratedSQL, the members of MemberErrors, and
-// the model export. The report has no warnings, no count of requests and nothing left out.
+// Describe counts what a snapshot holds: the cubes, the views and the members of DataModel and
+// those that only ModelExport has, the members with SQL and the grouped members of GeneratedSQL,
+// the members of MemberErrors, and the model export. The report has no warnings, no count of
+// requests and nothing left out.
 //
 // Describe returns an error if DataModel is not a data model.
 func Describe(snapshot *Snapshot) (*Report, error) {
@@ -103,6 +111,9 @@ func Describe(snapshot *Snapshot) (*Report, error) {
 			report.Cubes++
 		}
 		report.Members += len(c.Members())
+	}
+	if snapshot.ModelExport != nil {
+		report.addExportOnly(exportOnlyParts(meta, snapshot.ModelExport))
 	}
 	report.countSQL(snapshot)
 	return report, nil
@@ -127,9 +138,12 @@ func (r *Report) countSQL(snapshot *Snapshot) {
 // each cube and each view: one request for at most Options.BatchSize members. The SQL of a
 // request is one entry of Snapshot.GeneratedSQL. If Cube returns an error for a request of many
 // members, Collect splits the members in two halves and asks again, down to one member. A member
-// for which Cube returns an error is in Snapshot.MemberErrors with the error text. If the client
-// uses a CloudTokenSource, Collect requests `/v1/model-export` too, and a failure of that
-// request is a warning.
+// for which Cube returns an error is in Snapshot.MemberErrors with the error text.
+//
+// If the client uses a CloudTokenSource, Collect requests `/v1/model-export` before the SQL. A
+// Cube deployment in production returns only what is public from `/v1/meta`. The model export has
+// each cube, view and member, so Collect requests the SQL of the private ones too. A failure of
+// the model export request is a warning, and the snapshot then has only what is public.
 //
 // The snapshot says what each data source is, if the caller or Cube Cloud says it: the entries
 // of Options.DataSources, then the response of `/v1/data-sources` of Cube Cloud, then the
@@ -176,6 +190,33 @@ func Collect(ctx context.Context, client *Client, options Options) (*Snapshot, *
 	if removed.any {
 		report.Warnings = lostLineageWarnings(meta, removed.names)
 	}
+
+	// The model export comes before the SQL: it names the private members, and Cube generates
+	// their SQL as for each other member.
+	var private []exportOnly
+	if client.Cloud() && filter.dropsModelExport(removed) {
+		report.ModelExportSkipped = true
+	} else if client.Cloud() {
+		modelExport, warning := collectModelExport(ctx, client)
+		if ctx.Err() != nil {
+			return nil, nil, ctx.Err()
+		}
+		if warning != "" {
+			report.Warnings = append(report.Warnings, warning)
+		}
+		if modelExport != nil {
+			// Nothing was removed from the data model, so meta is the whole response.
+			private = exportOnlyParts(meta, modelExport)
+			if filter.removesExportOnly(private) {
+				private = nil
+				report.ModelExportSkipped = true
+			} else {
+				snapshot.ModelExport = modelExport
+				report.ModelExport = true
+			}
+		}
+	}
+
 	batchSize := options.BatchSize
 	if batchSize <= 0 {
 		batchSize = DefaultBatchSize
@@ -189,6 +230,10 @@ func Collect(ctx context.Context, client *Client, options Options) (*Snapshot, *
 		}
 		report.Members += len(c.Members())
 		batches = append(batches, memberBatches(c, batchSize)...)
+	}
+	report.addExportOnly(private)
+	for _, part := range private {
+		batches = append(batches, memberBatches(part.cube, batchSize)...)
 	}
 	if filter.SkipMemberSQL {
 		report.MemberSQLSkipped = true
@@ -247,21 +292,6 @@ func Collect(ctx context.Context, client *Client, options Options) (*Snapshot, *
 		}
 	}
 
-	if client.Cloud() && filter.dropsModelExport(removed) {
-		report.ModelExportSkipped = true
-	} else if client.Cloud() {
-		modelExport, warning := collectModelExport(ctx, client)
-		if ctx.Err() != nil {
-			return nil, nil, ctx.Err()
-		}
-		if warning != "" {
-			report.Warnings = append(report.Warnings, warning)
-		}
-		if modelExport != nil {
-			snapshot.ModelExport = modelExport
-			report.ModelExport = true
-		}
-	}
 	return snapshot, report, nil
 }
 
@@ -269,7 +299,10 @@ func Collect(ctx context.Context, client *Client, options Options) (*Snapshot, *
 func collectModelExport(ctx context.Context, client *Client) ([]byte, string) {
 	body, err := client.ModelExport(ctx)
 	if err != nil {
-		return nil, fmt.Sprintf("the Cube Cloud model export is not in the snapshot: %s", err)
+		return nil, fmt.Sprintf(
+			"the Cube Cloud model export is not in the snapshot, so the snapshot has no private cube, view or member: %s",
+			err,
+		)
 	}
 	var page struct {
 		Data       []json.RawMessage `json:"data"`
