@@ -39,7 +39,8 @@ type Filter struct {
 	// The snapshot has no lineage to the warehouse tables and no data source for each cube.
 	SkipMemberSQL bool
 	// SkipModelExport leaves out the Cube Cloud model export. Collect then sends no
-	// `/v1/model-export` request.
+	// `/v1/model-export` request. The snapshot then has no private cube, view or member: a Cube
+	// deployment in production returns them only in the model export.
 	SkipModelExport bool
 }
 
@@ -59,8 +60,9 @@ type LeftOut struct {
 	// MemberSQLSkipped is true if SkipMemberSQL is set.
 	MemberSQLSkipped bool
 	// ModelExportSkipped is true if the filter left out the Cube Cloud model export:
-	// SkipModelExport is set, or the filter removed a cube, a view or a member. The model export
-	// cannot be filtered, so a snapshot with a part removed has none.
+	// SkipModelExport is set, or the filter removes a cube, a view or a member, also one that
+	// only the model export has. The model export cannot be filtered, so a snapshot with a part
+	// removed has none. Such a snapshot has no private cube, view or member, and no SQL of them.
 	ModelExportSkipped bool
 }
 
@@ -103,7 +105,8 @@ func (f Filter) IsZero() bool {
 //
 // Apply removes the cubes, the views and the members from DataModel. It removes those members
 // from each entry of GeneratedSQL, each entry with no member left, and the entries of
-// MemberErrors of those members. The SQL text of an entry stays as it is. It does not decode
+// MemberErrors of those members. If it removes ModelExport, it removes the SQL and the errors of
+// the members that only ModelExport has too. The SQL text of an entry stays as it is. It does not decode
 // DataModel into typed structs: each property that stays keeps its bytes. If the filter removes
 // nothing, DataModel is the DataModel of the input.
 //
@@ -122,14 +125,26 @@ func (f Filter) Apply(snapshot *Snapshot) (*Snapshot, *FilterReport, error) {
 	}
 	if removed.any {
 		out.GeneratedSQL = keepGeneratedSQL(out.GeneratedSQL, removed)
-		errors := make([]MemberError, 0, len(out.MemberErrors))
-		for _, member := range out.MemberErrors {
-			if !removed.member(member.Member) {
-				errors = append(errors, member)
+		out.MemberErrors = keepMemberErrors(out.MemberErrors, removed)
+		report.Warnings = lostLineageWarnings(meta, removed.names)
+	}
+	if out.ModelExport != nil {
+		// The model export has the private cubes, views and members, which DataModel does not
+		// have. Their SQL is in the snapshot too.
+		whole, err := cubemeta.Parse(snapshot.DataModel)
+		if err != nil {
+			return nil, nil, err
+		}
+		private := exportOnlyParts(whole, out.ModelExport)
+		if f.dropsModelExport(removed) || f.removesExportOnly(private) {
+			report.ModelExportSkipped = true
+			out.ModelExport = nil
+			// Without the model export nothing declares them, so their SQL goes too.
+			if names := exportOnlyNames(private); names.any {
+				out.GeneratedSQL = keepGeneratedSQL(out.GeneratedSQL, names)
+				out.MemberErrors = keepMemberErrors(out.MemberErrors, names)
 			}
 		}
-		out.MemberErrors = errors
-		report.Warnings = lostLineageWarnings(meta, removed.names)
 	}
 	if f.SkipMemberSQL {
 		report.MemberSQLSkipped = true
@@ -142,11 +157,19 @@ func (f Filter) Apply(snapshot *Snapshot) (*Snapshot, *FilterReport, error) {
 	if len(out.MemberErrors) == 0 {
 		out.MemberErrors = nil
 	}
-	if out.ModelExport != nil && f.dropsModelExport(removed) {
-		report.ModelExportSkipped = true
-		out.ModelExport = nil
-	}
 	return &out, report, nil
+}
+
+// keepMemberErrors removes the entries of the members that were removed. It does not change its
+// input.
+func keepMemberErrors(entries []MemberError, removed *removedNames) []MemberError {
+	kept := make([]MemberError, 0, len(entries))
+	for _, member := range entries {
+		if !removed.member(member.Member) {
+			kept = append(kept, member)
+		}
+	}
+	return kept
 }
 
 // keepGeneratedSQL removes the members that were removed from each entry, and each entry with

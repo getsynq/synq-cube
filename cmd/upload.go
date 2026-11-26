@@ -559,6 +559,9 @@ func printReport(deps Deps, report *cube.Report, filter cube.Filter, fromFile bo
 	}
 	if report.ModelExport {
 		fmt.Fprintln(deps.Stdout, "Cube Cloud model export: yes")
+		// The private cubes, views and members. They are in the counts above too.
+		fmt.Fprintf(deps.Stdout, "Private, from the Cube Cloud model export only: cubes %d, views %d, members %d\n",
+			report.ModelExportCubes, report.ModelExportViews, report.ModelExportMembers)
 	}
 	if len(filter.Include)+len(filter.Exclude) > 0 {
 		fmt.Fprintf(deps.Stdout, "Left out by --include and --exclude: cubes %d, views %d, members %d\n",

@@ -10,7 +10,7 @@ This repository is public. Customers read the source to audit the tool, and they
 |---|---|
 | `main.go`, `cmd/` | The command tree: the settings, the output and the call of the upload |
 | `cube/` | The collector: the Cube REST client, the token sources and `Collect` |
-| `cube/cubemeta/` | The reader of the `/v1/meta` response |
+| `cube/cubemeta/` | The reader of the `/v1/meta` response and of the model export, and the merge of the two |
 | `cube/cubetest/` | A test server that replays a recorded Cube deployment |
 | `internal/quality/` | The upload client for the Coalesce Quality API |
 | `internal/gitcontext/` | The reader of the git repository: the variables of a CI system and the git checkout |
@@ -65,12 +65,26 @@ The package `github.com/getsynq/synq-cube/cube` has two callers: this tool and t
 - `cubetest.Server` answers a query of many members. Use `ErrorMembers`, `GroupedOnlyMembers`, `NoAliasMembers`, `NoAliases`, `NoPostSQL` and `MaxURLLength` to test a failure, and `SQLRequests` to assert the requests.
 - `Report.SQLRequests` counts each `/v1/sql` request, with the requests that the client sent again.
 
+### The model export and the private members
+
+A Cube deployment in production returns only the public cubes, views and members from `/v1/meta`. The Cube Cloud model export (`POST /v1/model-export`) has each of them, also those with `public: false`. Cube Core does not serve it.
+
+- `Collect` requests the model export before the SQL, and only with a `CloudTokenSource`. A failed request is a warning, never an error.
+- `cubemeta.ParseModelExport` reads the model export. `ModelExport.OnlyInExport` lists what the model export has and `/v1/meta` does not have. `Collect` requests the SQL of those measures and dimensions in batches of their own, so a statement never mixes them with the members of `/v1/meta`.
+- `Snapshot.DataModel` stays the response of `/v1/meta`, and `Snapshot.ModelExport` stays the response of the model export. Do not merge the two in the collector. Coalesce Quality adds what only the model export has, with `ModelExport.AddTo` of `cubemeta`.
+- `cubemeta` is the only reader of the model export. The collector and Coalesce Quality use it, so the two agree on what is only in the model export. Do not read the model export in another package.
+- `ModelExport.AddTo` gives each added cube, view and member the names of `/v1/meta` (`aggType`, `primaryKey`, `shortTitle`, `aliasMember`, `nestedFolders`, the `name` of a join). `/v1/meta` stays the source of each cube, view and member that it has.
+- A snapshot has the SQL of a member that only the model export has only if it has the model export. If `Filter.Apply` removes the model export, it removes that SQL too.
+- `Report.Cubes`, `Report.Views` and `Report.Members` include what only the model export has. `Report.ModelExportCubes`, `Report.ModelExportViews` and `Report.ModelExportMembers` count that part alone.
+- The model export names a member with no cube (`revenue`), and its properties in snake case. `cubetest.ModelExport` and `cubetest.PublicMetaExtended` give the two responses of a deployment in production for the recording.
+
 ### The filter
 
 `cube.Filter` leaves parts of the data model out of a snapshot. It has two entries: `Collect` applies `Options.Filter` while it reads Cube, and `Filter.Apply` applies a filter to a snapshot that exists.
 
-- The two entries give the same snapshot, with one exception: the SQL text of a statement from which `Filter.Apply` removed a member. `Filter.Apply` keeps that text, and `Collect` asks Cube only for the members that stay. `TestCollectWithAFilterEqualsApplyOnTheWholeSnapshot` asserts it. If you add a setting to `cube.Filter`, add it to the two entries and to that test.
+- The two entries give the same snapshot, with one exception: the SQL text of a statement from which `Filter.Apply` removed a member. `Filter.Apply` keeps that text, and `Collect` asks Cube only for the members that stay. `TestCollectWithAFilterEqualsApplyOnTheWholeSnapshot` and `TestCollectWithAFilterEqualsApplyWithPrivateMembers` assert it. If you add a setting to `cube.Filter`, add it to the two entries and to that test.
 - `Collect` puts no member that the filter leaves out in a `/v1/sql` request.
+- The model export cannot be filtered. A filter that removes a cube, a view or a member, also one that only the model export has, removes the model export (`Filter.removesExportOnly`).
 - `Filter.Apply` removes a member from the `Members` of its entry of `GeneratedSQL` and from `MemberErrors`. It removes an entry with no member left. It never changes the SQL text.
 - The filter never decodes `DataModel` into typed structs. `rewriteArrays` in `cube/filter.go` writes only the lists that change, from the JSON text of the entries that stay. A property that the tool does not know keeps its bytes.
 - A snapshot is the whole data model for Coalesce Quality: a cube or a view that is not in the snapshot is removed there. Say this in the help text of each setting that removes a cube or a view.

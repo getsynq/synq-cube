@@ -56,6 +56,8 @@ See [How the tool reads the SQL](#how-the-tool-reads-the-sql).
 
 With Cube Cloud credentials, the tool also sends `POST /v1/model-export` and `GET /v1/data-sources` to the Cube Cloud Metadata API. If one of these requests fails, the tool prints a warning and sends the snapshot without its response.
 
+A Cube deployment in production returns only the public cubes, views and members from `/v1/meta`. The model export has each of them, also those with `public: false`. So only a snapshot with a model export has the private cubes, views and members. See [Private cubes, views and members](#private-cubes-views-and-members).
+
 The tool also reads five kinds of variable from its own environment that say what a data source of Cube is, for example `CUBEJS_DB_TYPE`. See [How Coalesce Quality finds the warehouse of a data source](#how-coalesce-quality-finds-the-warehouse-of-a-data-source).
 
 The tool reads the URL, the branch and the commit of the git repository of the data model. See [The git repository of the data model](#the-git-repository-of-the-data-model).
@@ -486,9 +488,9 @@ synq-cube upload --input smaller.json
 | Setting | What is left out | The price |
 |---|---|---|
 | `--include`, `--exclude` | The cubes and the views that the patterns do not keep, with their members | Coalesce Quality does not show them. |
-| `--skip-hidden` | The cubes and the views with `public: false` (or the older `isVisible: false`), and the members of the other cubes and views that are not public | Coalesce Quality does not show them. |
+| `--skip-hidden` | The cubes and the views with `public: false` (or the older `isVisible: false`), and the members of the other cubes and views that are not public. With Cube Cloud credentials, also the model export, if it has a private cube, view or member | Coalesce Quality does not show them. |
 | `--skip-member-sql` | The SQL of each member, and the members with an error | No lineage to the warehouse tables, and no data source for each cube |
-| `--skip-model-export` | The Cube Cloud model export | The snapshot has only what the REST API returns. |
+| `--skip-model-export` | The Cube Cloud model export | The snapshot has only what the REST API returns: no private cube, view or member of a deployment in production. |
 
 - A pattern is a glob on the name of a cube or a view: `*` is each sequence of characters, `?` is one character, `[abc]` is one character of a set. The match is on the whole name and is case sensitive, as the names in Cube are. `orders*` matches `orders` and `orders_overview`, and it does not match `pg_orders`.
 - A name stays if it matches an `--include` pattern, or if there is no `--include` pattern, and if it matches no `--exclude` pattern.
@@ -496,7 +498,7 @@ synq-cube upload --input smaller.json
 - The cube or the view is removed from the `dataModel` of the snapshot. The other properties of `dataModel` keep their text, also the properties that the tool does not know.
 - On a file, a filter removes the members that it leaves out from each SQL statement, and it removes a statement with no member left. The SQL text of a statement does not change: it still has the output column of a member that was removed. On a collection, the tool asks Cube only for the members that stay.
 - A view that includes members of a cube that is left out stays in the snapshot. It has no lineage through that cube. The tool prints one warning for each such view and cube. Many projects keep the cubes hidden and show only the views, so with `--skip-hidden` the views of such a project have no lineage through their cubes.
-- The model export cannot be filtered. If a filter removes a cube, a view or a member, the snapshot has no model export, and the tool says so.
+- The model export cannot be filtered. If a filter removes a cube, a view or a member, the snapshot has no model export, and the tool says so. This is also true for a private cube, view or member that only the model export has. A snapshot with no model export has no private cube, view or member, and no SQL of them.
 - If the filters leave no cube and no view, the tool stops with an error and sends nothing.
 - The tool prints how many cubes, views and members each setting left out:
 
@@ -638,12 +640,24 @@ curl -s -X POST "$CUBE_CLOUD_URL/api/v1/api-keys" \
 - `deploymentIds` limits the key to the deployment. `allowedEndpoints` limits it to the list of the environments and to the token for the metadata of the deployment.
 - The response holds the key one time, in `token`. Keep it in a secret store.
 - A key with these two permissions gives the full snapshot: the data model, the SQL of the members, the model export and the data sources.
+- Cube Cloud gives the token the `meta-private` scope only if the owner of the key is an admin or has the "View data model" permission on the deployment. Without the scope, Cube Cloud refuses the model export, and the snapshot has no private cube, view or member.
 - To give the key an end date, add `"ttlHours"`.
 - If Coalesce Quality reads the deployment itself (the Cube Cloud option of the integration), add `DeploymentsPublicController.getDeployments` to `allowedEndpoints`. The setup of the integration then shows the deployments of the key as a selection. The uploader does not need this permission.
 
 The token that Cube Cloud creates has the scopes `meta` and `meta-private`. If the deployment refuses the `/v1/sql` requests of that token, the tool prints a warning for each member.
 
-You can also use `CUBE_API_URL` with `CUBE_API_SECRET` or `CUBE_API_TOKEN` on Cube Cloud, as on Cube Core. The snapshot then has no model export.
+You can also use `CUBE_API_URL` with `CUBE_API_SECRET` or `CUBE_API_TOKEN` on Cube Cloud, as on Cube Core. The snapshot then has no model export, so it has no private cube, view or member.
+
+### Private cubes, views and members
+
+A cube, a view or a member with `public: false` is private. A Cube deployment in production does not return it from `/v1/meta`. A Cube in development mode returns it.
+
+- With Cube Cloud credentials, the tool reads the model export first. For each measure and each dimension that only the model export has, it requests the SQL from `/v1/sql`, as for each other member.
+- Coalesce Quality shows a private cube, view or member with a mark that says that it is private. A private cube or view has no link to its model file, as the model export has no file name.
+- The run summary counts them in the line `Private, from the Cube Cloud model export only`. The counts of cubes, views and members above that line include them.
+- If Cube Cloud refuses the model export, the tool prints a warning. The snapshot then has only what is public, and the integration in Coalesce Quality says so.
+- With `CUBE_API_SECRET` or `CUBE_API_TOKEN`, Cube does not serve the model export. A snapshot from Cube Core in production has only what is public.
+- To leave them out, use `--skip-hidden`.
 
 ## Troubleshooting
 

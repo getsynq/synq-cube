@@ -338,3 +338,104 @@ func writeError(w http.ResponseWriter, status int, text string) {
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(map[string]string{"error": text})
 }
+
+// PublicMetaExtended returns the recorded response of `/v1/meta?extended` without the cubes, the
+// views and the members that are not public. It is the response of a Cube deployment in
+// production. The recording is from a Cube in development mode, which returns them.
+func PublicMetaExtended() []byte {
+	var meta map[string]json.RawMessage
+	mustUnmarshal(metaExtended, &meta)
+	var entries []map[string]json.RawMessage
+	mustUnmarshal(meta["cubes"], &entries)
+	kept := make([]map[string]json.RawMessage, 0, len(entries))
+	for _, entry := range entries {
+		if hidden(entry) {
+			continue
+		}
+		for _, list := range []string{"measures", "dimensions", "segments"} {
+			var members []map[string]json.RawMessage
+			mustUnmarshal(entry[list], &members)
+			public := make([]map[string]json.RawMessage, 0, len(members))
+			for _, member := range members {
+				if !hidden(member) {
+					public = append(public, member)
+				}
+			}
+			entry[list] = mustMarshal(public)
+		}
+		kept = append(kept, entry)
+	}
+	meta["cubes"] = mustMarshal(kept)
+	return mustMarshal(meta)
+}
+
+// ModelExport returns a response of `POST /v1/model-export` for the recording: each cube, each
+// view and each member, also those that are not public. The properties have the names of the
+// Cube Cloud Metadata API: a member has its name with no cube, and `agg_type` and
+// `is_primary_key` are in snake case.
+func ModelExport() []byte {
+	var meta struct {
+		Cubes []map[string]json.RawMessage `json:"cubes"`
+	}
+	mustUnmarshal(metaExtended, &meta)
+	entities := make([]map[string]any, 0, len(meta.Cubes))
+	for _, entry := range meta.Cubes {
+		entity := map[string]any{
+			"type":        entry["type"],
+			"name":        entry["name"],
+			"public":      !hidden(entry),
+			"title":       entry["title"],
+			"description": entry["description"],
+		}
+		for _, list := range []string{"measures", "dimensions", "segments"} {
+			var members []map[string]json.RawMessage
+			mustUnmarshal(entry[list], &members)
+			exported := make([]map[string]any, 0, len(members))
+			for _, member := range members {
+				var name, sql string
+				mustUnmarshal(member["name"], &name)
+				_, short, _ := strings.Cut(name, ".")
+				item := map[string]any{"name": short, "public": !hidden(member), "title": member["title"], "type": member["type"]}
+				if raw, found := member["sql"]; found {
+					mustUnmarshal(raw, &sql)
+					item["sql"] = strings.Trim(sql, "`")
+				}
+				if raw, found := member["aggType"]; found {
+					item["agg_type"] = raw
+				}
+				if raw, found := member["primaryKey"]; found {
+					item["is_primary_key"] = raw
+				}
+				exported = append(exported, item)
+			}
+			entity[list] = exported
+		}
+		entities = append(entities, entity)
+	}
+	return mustMarshal(map[string]any{
+		"data":       entities,
+		"pagination": map[string]int{"total": len(entities), "offset": 0, "limit": len(entities)},
+	})
+}
+
+// hidden is true for an entry of the recording that is not public.
+func hidden(entry map[string]json.RawMessage) bool {
+	return string(entry["public"]) == "false" || string(entry["isVisible"]) == "false"
+}
+
+func mustUnmarshal(data []byte, target any) {
+	if len(data) == 0 {
+		return
+	}
+	if err := json.Unmarshal(data, target); err != nil {
+		panic(err)
+	}
+}
+
+func mustMarshal(value any) []byte {
+	data, err := json.Marshal(value)
+	if err != nil {
+		panic(err)
+	}
+	return data
+}
