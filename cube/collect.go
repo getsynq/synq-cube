@@ -193,7 +193,7 @@ func Collect(ctx context.Context, client *Client, options Options) (*Snapshot, *
 
 	// The model export comes before the SQL: it names the private members, and Cube generates
 	// their SQL as for each other member.
-	var private []exportOnly
+	var private []*cubemeta.ExportOnly
 	if client.Cloud() && filter.dropsModelExport(removed) {
 		report.ModelExportSkipped = true
 	} else if client.Cloud() {
@@ -233,7 +233,7 @@ func Collect(ctx context.Context, client *Client, options Options) (*Snapshot, *
 	}
 	report.addExportOnly(private)
 	for _, part := range private {
-		batches = append(batches, memberBatches(part.cube, batchSize)...)
+		batches = append(batches, memberBatches(part.Cube, batchSize)...)
 	}
 	if filter.SkipMemberSQL {
 		report.MemberSQLSkipped = true
