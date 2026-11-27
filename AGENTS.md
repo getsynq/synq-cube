@@ -94,11 +94,13 @@ A Cube deployment in production returns only the public cubes, views and members
 
 A Cube deployment can compile another data model for each security context (`context_to_app_id`). `Collect` reads the data model with one security context, the default. `CollectVariant` reads the data model of one more security context, with a client whose token has that security context. The code is in `cube/variant.go`.
 
-- `cubemeta.Differing` compares each cube and each view of the variant with the snapshot. The two sides are `cubemeta.Merged`: the response of `/v1/meta` with what only the model export has. Coalesce Quality uses the same function, so the collector and Coalesce Quality agree on what differs. Do not compare in another package.
-- The definition is the whole entry of the `cubes` list. Two entries are equal if their JSON values are equal. The order of the properties does not count.
+- `cubemeta.Differing` compares each cube and each view of the variant with the snapshot. It takes both sides as a `cubemeta.Compilation`: the response of `/v1/meta` and the model export. Coalesce Quality uses the same function, so the collector and Coalesce Quality agree on what differs. Do not compare in another package.
+- The definition is the whole entry of the `cubes` list, with what only the model export has. Two entries are equal if their JSON values are equal. The order of the properties does not count.
+- The tables that the model export names for a cube (`table_references`) count too, as `/v1/meta` does not name the table of a cube on `sql_table`. Without a model export, a variant that changes only that table looks equal.
+- A view differs too if it includes a member of a differing cube, and that member differs or only the variant has it. The view then reads another definition, although its own entry is equal.
 - `CollectVariant` requests `/v1/sql` only for the members of the cubes and the views that differ, in the batches of `Collect`.
-- The variant reads the model export only if the snapshot has one. If the snapshot has one and the variant does not get one, `CollectVariant` fails (`ErrVariantModelExport`). Without the model export, each private cube of the variant would look equal, and Coalesce Quality would remove its entity.
-- The filter of the options leaves the same parts out of the variant as out of the snapshot.
+- The variant reads the model export only if the snapshot has one. If the snapshot has one and the request fails, `CollectVariant` fails (`ErrVariantModelExport`). Without the model export, each private cube of the variant would look equal, and Coalesce Quality would remove its entity.
+- The filter of the options applies to the variant by the rules of `Collect`. If it removes a part of the data model of the variant, also one that only the model export of the variant has, the variant has no model export. This is a warning, not an error.
 - The label goes into the path of an entity in Coalesce Quality. `ValidateVariantLabel` allows letters, digits, `_` and `-`, at most 50 characters. Do not allow `@`, `/` or a space.
 
 ### The data sources

@@ -88,8 +88,10 @@ var ErrVariantModelExport = errors.New("cube: the model export of the variant is
 // only for the members of the cubes and the views that differ, in the batches of Collect.
 //
 // Of the options, CollectVariant uses Concurrency, BatchSize and Filter. The filter leaves out of
-// the variant what it leaves out of the snapshot. The snapshot of a filter that removes a part of
-// the data model has no model export, so its variant has none either.
+// the variant what it leaves out of the snapshot, by the rules of Collect. The model export cannot
+// be filtered, so the variant has none if the filter removes a part of the data model of the
+// variant, also one that only its model export has. The snapshot of such a filter has no model
+// export either.
 //
 // CollectVariant returns an error if the label is not valid, if the `/v1/meta` request fails, if
 // its response is not a data model, if the filter leaves no cube and no view, if the model export
@@ -102,23 +104,19 @@ func CollectVariant(ctx context.Context, client *Client, snapshot *Snapshot, lab
 	if err := filter.Validate(); err != nil {
 		return nil, nil, err
 	}
-	base, err := cubemeta.Parse(cubemeta.Merged(snapshot.DataModel, snapshot.ModelExport))
-	if err != nil {
-		return nil, nil, fmt.Errorf("cube: the data model of the snapshot is not read: %w", err)
-	}
-
 	metaBody, err := client.Meta(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 	collected := &Snapshot{DataModel: metaBody}
-	if _, _, err := filter.applyToMeta(collected, &FilterReport{}); err != nil {
+	removed, meta, err := filter.applyToMeta(collected, &FilterReport{})
+	if err != nil {
 		return nil, nil, err
 	}
 	variant := &Variant{Label: label, DataModel: collected.DataModel}
 	report := &VariantReport{}
 
-	if snapshot.ModelExport != nil {
+	if snapshot.ModelExport != nil && !filter.dropsModelExport(removed) {
 		modelExport, warning := collectModelExport(ctx, client)
 		if ctx.Err() != nil {
 			return nil, nil, ctx.Err()
@@ -129,19 +127,23 @@ func CollectVariant(ctx context.Context, client *Client, snapshot *Snapshot, lab
 		if warning != "" {
 			report.Warnings = append(report.Warnings, warning)
 		}
-		variant.ModelExport = modelExport
-		report.ModelExport = true
+		if filter.removesExportOnly(exportOnlyParts(meta, modelExport)) {
+			// The filter leaves out a part that only the model export of the variant has.
+			report.Warnings = append(report.Warnings,
+				"the filter leaves out a part of the model export of the variant, so the variant has no model export")
+		} else {
+			variant.ModelExport = modelExport
+			report.ModelExport = true
+		}
 	}
 
-	meta, err := cubemeta.Parse(variant.DataModel)
+	report.Differing, err = cubemeta.Differing(
+		cubemeta.Compilation{DataModel: snapshot.DataModel, ModelExport: snapshot.ModelExport},
+		cubemeta.Compilation{DataModel: variant.DataModel, ModelExport: variant.ModelExport},
+	)
 	if err != nil {
 		return nil, nil, err
 	}
-	merged, err := cubemeta.Parse(cubemeta.Merged(variant.DataModel, variant.ModelExport))
-	if err != nil {
-		return nil, nil, err
-	}
-	report.Differing = cubemeta.Differing(base, merged)
 	if filter.SkipMemberSQL || len(report.Differing) == 0 {
 		return variant, report, nil
 	}
