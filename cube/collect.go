@@ -240,36 +240,17 @@ func Collect(ctx context.Context, client *Client, options Options) (*Snapshot, *
 		batches = nil
 	}
 
-	concurrency := options.Concurrency
-	if concurrency <= 0 {
-		concurrency = DefaultConcurrency
+	generated, memberErrors, requests, err := collectBatches(ctx, client, batches, options.Concurrency)
+	if err != nil {
+		return nil, nil, err
 	}
-	var requests atomic.Int64
-	collector := &batchCollector{client: client}
-	results := make([]batchResult, len(batches))
-	group, groupCtx := errgroup.WithContext(withSQLRequestCounter(ctx, &requests))
-	group.SetLimit(concurrency)
-	for i, batch := range batches {
-		group.Go(func() error {
-			if err := groupCtx.Err(); err != nil {
-				return err
-			}
-			results[i] = collector.collect(groupCtx, batch)
-			return groupCtx.Err()
-		})
-	}
-	if err := group.Wait(); err != nil {
-		return nil, nil, fmt.Errorf("cube: the collection of the member SQL stopped: %w", err)
-	}
-	for _, result := range results {
-		snapshot.GeneratedSQL = append(snapshot.GeneratedSQL, result.generated...)
-		snapshot.MemberErrors = append(snapshot.MemberErrors, result.errors...)
-	}
+	snapshot.GeneratedSQL = generated
+	snapshot.MemberErrors = memberErrors
 	for _, member := range snapshot.MemberErrors {
 		report.Warnings = append(report.Warnings, fmt.Sprintf("%s: Cube generated no SQL: %s", member.Member, member.Error))
 	}
 	report.countSQL(snapshot)
-	report.SQLRequests = int(requests.Load())
+	report.SQLRequests = requests
 
 	lists := []originList{{origin: OriginEnvironment, sources: options.EnvironmentDataSources}}
 	if client.Cloud() {
@@ -293,6 +274,39 @@ func Collect(ctx context.Context, client *Client, options Options) (*Snapshot, *
 	}
 
 	return snapshot, report, nil
+}
+
+// collectBatches asks Cube for the SQL of the batches, at most concurrency requests at the same
+// time. It returns the statements and the members with no SQL in the order of the batches, and the
+// count of `/v1/sql` requests. It returns an error only if ctx ends.
+func collectBatches(ctx context.Context, client *Client, batches []memberBatch, concurrency int) ([]GeneratedSQL, []MemberError, int, error) {
+	if concurrency <= 0 {
+		concurrency = DefaultConcurrency
+	}
+	var requests atomic.Int64
+	collector := &batchCollector{client: client}
+	results := make([]batchResult, len(batches))
+	group, groupCtx := errgroup.WithContext(withSQLRequestCounter(ctx, &requests))
+	group.SetLimit(concurrency)
+	for i, batch := range batches {
+		group.Go(func() error {
+			if err := groupCtx.Err(); err != nil {
+				return err
+			}
+			results[i] = collector.collect(groupCtx, batch)
+			return groupCtx.Err()
+		})
+	}
+	if err := group.Wait(); err != nil {
+		return nil, nil, 0, fmt.Errorf("cube: the collection of the member SQL stopped: %w", err)
+	}
+	var generated []GeneratedSQL
+	var memberErrors []MemberError
+	for _, result := range results {
+		generated = append(generated, result.generated...)
+		memberErrors = append(memberErrors, result.errors...)
+	}
+	return generated, memberErrors, int(requests.Load()), nil
 }
 
 // collectModelExport returns the response of `/v1/model-export`, or a warning.
