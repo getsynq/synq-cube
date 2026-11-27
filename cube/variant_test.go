@@ -181,8 +181,9 @@ func (s *FilterSuite) TestTheFilterExcludesACubeOfTheVariantOnly() {
 }
 
 // The model export cannot be filtered. If the filter leaves out a private cube that only the
-// model export of the variant has, the variant has no model export, so the cube is not in it.
-func (s *FilterSuite) TestTheFilterDropsTheModelExportOfTheVariant() {
+// model export of the variant has, the variant fails: without the model export each private cube
+// of the variant would look equal.
+func (s *FilterSuite) TestAFilterThatDropsTheModelExportOfTheVariantFails() {
 	client := s.productionClient()
 	filter := cube.Filter{Exclude: []string{"tenant_*"}}
 	base, _, err := cube.Collect(s.T().Context(), client, cube.Options{Filter: filter})
@@ -200,17 +201,9 @@ func (s *FilterSuite) TestTheFilterDropsTheModelExportOfTheVariant() {
 	s.server.ModelExport = body
 	before := len(s.server.SQLRequests())
 
-	variant, report, err := cube.CollectVariant(s.T().Context(), client, base, "tenant_x", cube.Options{Filter: filter})
-	s.Require().NoError(err)
-	s.Nil(variant.ModelExport)
-	s.False(report.ModelExport)
-	s.NotEmpty(report.Warnings)
-	s.NotContains(report.Differing, "tenant_scores")
-	for _, request := range s.server.SQLRequests()[before:] {
-		for _, member := range request.Members {
-			s.False(strings.HasPrefix(member, "tenant_scores."), member)
-		}
-	}
+	_, _, err = cube.CollectVariant(s.T().Context(), client, base, "tenant_x", cube.Options{Filter: filter})
+	s.Require().ErrorIs(err, cube.ErrVariantModelExport)
+	s.Len(s.server.SQLRequests(), before)
 }
 
 // With SkipMemberSQL the variant says what differs and requests no SQL.

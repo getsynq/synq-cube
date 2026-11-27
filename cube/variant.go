@@ -89,13 +89,12 @@ var ErrVariantModelExport = errors.New("cube: the model export of the variant is
 //
 // Of the options, CollectVariant uses Concurrency, BatchSize and Filter. The filter leaves out of
 // the variant what it leaves out of the snapshot, by the rules of Collect. The model export cannot
-// be filtered, so the variant has none if the filter removes a part of the data model of the
-// variant, also one that only its model export has. The snapshot of such a filter has no model
-// export either.
+// be filtered. If the snapshot has a model export and the filter removes a part of the variant,
+// also one that only its model export has, CollectVariant fails with ErrVariantModelExport.
 //
 // CollectVariant returns an error if the label is not valid, if the `/v1/meta` request fails, if
 // its response is not a data model, if the filter leaves no cube and no view, if the model export
-// is not read (ErrVariantModelExport), or if ctx ends.
+// is not read or not usable with the filter (ErrVariantModelExport), or if ctx ends.
 func CollectVariant(ctx context.Context, client *Client, snapshot *Snapshot, label string, options Options) (*Variant, *VariantReport, error) {
 	if err := ValidateVariantLabel(label); err != nil {
 		return nil, nil, err
@@ -128,13 +127,15 @@ func CollectVariant(ctx context.Context, client *Client, snapshot *Snapshot, lab
 			report.Warnings = append(report.Warnings, warning)
 		}
 		if filter.removesExportOnly(exportOnlyParts(meta, modelExport)) {
-			// The filter leaves out a part that only the model export of the variant has.
-			report.Warnings = append(report.Warnings,
-				"the filter leaves out a part of the model export of the variant, so the variant has no model export")
-		} else {
-			variant.ModelExport = modelExport
-			report.ModelExport = true
+			// The model export cannot be filtered, and without it each private cube of the
+			// variant would look equal.
+			return nil, nil, fmt.Errorf("%w: the filter leaves out a part that only the model export of the variant has",
+				ErrVariantModelExport)
 		}
+		variant.ModelExport = modelExport
+		report.ModelExport = true
+	} else if snapshot.ModelExport != nil {
+		return nil, nil, fmt.Errorf("%w: the filter leaves out a part of the data model of the variant", ErrVariantModelExport)
 	}
 
 	report.Differing, err = cubemeta.Differing(

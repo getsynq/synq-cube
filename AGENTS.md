@@ -100,7 +100,7 @@ A Cube deployment can compile another data model for each security context (`con
 - A view differs too if it includes a member of a differing cube, and that member differs or only the variant has it. The view then reads another definition, although its own entry is equal.
 - `CollectVariant` requests `/v1/sql` only for the members of the cubes and the views that differ, in the batches of `Collect`.
 - The variant reads the model export only if the snapshot has one. If the snapshot has one and the request fails, `CollectVariant` fails (`ErrVariantModelExport`). Without the model export, each private cube of the variant would look equal, and Coalesce Quality would remove its entity.
-- The filter of the options applies to the variant by the rules of `Collect`. If it removes a part of the data model of the variant, also one that only the model export of the variant has, the variant has no model export. This is a warning, not an error.
+- The filter of the options applies to the variant by the rules of `Collect`. The model export cannot be filtered. If the snapshot has a model export and the filter removes a part of the variant, also one that only the model export of the variant has, `CollectVariant` fails (`ErrVariantModelExport`).
 - The label goes into the path of an entity in Coalesce Quality. `ValidateVariantLabel` allows letters, digits, `_` and `-`, at most 50 characters. Do not allow `@`, `/` or a space.
 
 ### The data sources
