@@ -33,7 +33,7 @@ go vet ./...
 The package `github.com/getsynq/synq-cube/cube` has two callers: this tool and the Coalesce Quality backend. The two callers send the same snapshot.
 
 - Put each change of what a snapshot holds in `cube/`, never in `cmd/`.
-- Keep the exported API of `cube/` stable: `Client`, `NewClient`, `NewStaticTokenSource`, `NewAPISecretTokenSource`, `NewCloudTokenSource`, `Collect`, `Describe`, `Options`, `Report`, `Snapshot`, `GeneratedSQL`, `GeneratedSQLMember`, `MemberError`, `GitContext`, `DataSource`, `DataSourcesFromEnv`, `ParseDataSource`, `Filter`, `Filter.Apply`, `FilterReport`, `LeftOut`, `ErrNothingLeft`, `cubemeta` and `cubetest.NewServer`. If you must change a signature, say so in the pull request.
+- Keep the exported API of `cube/` stable: `Client`, `NewClient`, `NewStaticTokenSource`, `NewAPISecretTokenSource`, `NewCloudTokenSource`, `Collect`, `Describe`, `Options`, `Report`, `Snapshot`, `GeneratedSQL`, `GeneratedSQLMember`, `MemberError`, `GitContext`, `DataSource`, `DataSourcesFromEnv`, `ParseDataSource`, `Filter`, `Filter.Apply`, `FilterReport`, `LeftOut`, `ErrNothingLeft`, `CollectVariant`, `Variant`, `VariantReport`, `ValidateVariantLabel`, `ErrVariantModelExport`, `cubemeta` and `cubetest.NewServer`. If you must change a signature, say so in the pull request.
 - Do not import `github.com/spf13/cobra` or a package under `internal/` from `cube/`.
 - Do not read environment variables in `cube/`. The caller gives each setting as a parameter.
 - Keep the dependencies of `cube/` small: the standard library, `github.com/golang-jwt/jwt/v5`, `golang.org/x/sync` and, in tests, `github.com/stretchr/testify`.
@@ -89,6 +89,19 @@ A Cube deployment in production returns only the public cubes, views and members
 - The filter never decodes `DataModel` into typed structs. `rewriteArrays` in `cube/filter.go` writes only the lists that change, from the JSON text of the entries that stay. A property that the tool does not know keeps its bytes.
 - A snapshot is the whole data model for Coalesce Quality: a cube or a view that is not in the snapshot is removed there. Say this in the help text of each setting that removes a cube or a view.
 - Give each new setting a flag and a `CUBE_*` variable in `cmd/upload.go`, a row in the README and a line in the run summary (`printReport`).
+
+### The variants of a security context
+
+A Cube deployment can compile another data model for each security context (`context_to_app_id`). `Collect` reads the data model with one security context, the default. `CollectVariant` reads the data model of one more security context, with a client whose token has that security context. The code is in `cube/variant.go`.
+
+- `cubemeta.Differing` compares each cube and each view of the variant with the snapshot. It takes both sides as a `cubemeta.Compilation`: the response of `/v1/meta` and the model export. Coalesce Quality uses the same function, so the collector and Coalesce Quality agree on what differs. Do not compare in another package.
+- The definition is the whole entry of the `cubes` list, with what only the model export has. Two entries are equal if their JSON values are equal. The order of the properties does not count.
+- The tables that the model export names for a cube (`table_references`) count too, as `/v1/meta` does not name the table of a cube on `sql_table`. Without a model export, a variant that changes only that table looks equal.
+- A view differs too if it includes a member of a differing cube, and that member differs or only the variant has it. The view then reads another definition, although its own entry is equal.
+- `CollectVariant` requests `/v1/sql` only for the members of the cubes and the views that differ, in the batches of `Collect`.
+- The variant reads the model export only if the snapshot has one. If the snapshot has one and the request fails, `CollectVariant` fails (`ErrVariantModelExport`). Without the model export, each private cube of the variant would look equal, and Coalesce Quality would remove its entity.
+- The filter of the options applies to the variant by the rules of `Collect`. The model export cannot be filtered. If the snapshot has a model export and the filter removes a part of the variant, also one that only the model export of the variant has, `CollectVariant` fails (`ErrVariantModelExport`).
+- The label goes into the path of an entity in Coalesce Quality. `ValidateVariantLabel` allows letters, digits, `_` and `-`, at most 50 characters. Do not allow `@`, `/` or a space.
 
 ### The data sources
 
